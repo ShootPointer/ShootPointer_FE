@@ -39,29 +39,37 @@ export default function KakaoLogin() {
     // 앱이 리디렉션 URI로 실행됐을 때 쿼리 파라미터로 code 받아 처리
     const checkRedirect = async () => {
       const redirectUrl = await Linking.getInitialURL();
+      console.log('리디렉션 URL (useEffect):', redirectUrl);
       if (!redirectUrl) return;
 
       const parsed = Linking.parse(redirectUrl);
       const code = parsed.queryParams?.code;
+      console.log('인가 코드 (useEffect):', code);
+
+      Alert.alert('인가 코드 (useEffect)', code || '인가 코드가 없습니다');
+
       if (code) {
         try {
           // 서버에 code 전달해 로그인 처리 및 토큰 발급 요청
           const response = await axios.get(
-            `${API_URL}/auth/login/kakao?code=${code}&redirect_uri=${encodeURIComponent(redirectUri)}`
-          );
+  `${API_URL}/kakao/callback?code=${code}&redirect_uri=${encodeURIComponent(redirectUri)}`
+);
+
+          console.log('서버 응답 (useEffect):', response.data);
+          Alert.alert('로그인 성공 (useEffect)', JSON.stringify(response.data));
+
           const token = response.data.data.token; // 자체 발급 토큰 (예)
           const kakaoAccessToken = response.data.data.kakaoAccessToken; // 백엔드가 함께 내려준 카카오 액세스 토큰
 
-          Alert.alert('로그인 성공', `Token: ${token}`);
-
           if (kakaoAccessToken) {
             const userInfo = await getUserInfo(kakaoAccessToken);
+            console.log('카카오 사용자 정보:', userInfo);
             if (userInfo) {
               const email = userInfo.kakao_account.email;
               const nickname = userInfo.kakao_account.profile.nickname;
               console.log('Email:', email);
               console.log('Nickname:', nickname);
-              // 여기서 상태에 저장하거나 AsyncStorage 등에 저장 가능
+              // 필요시 상태에 저장하거나 AsyncStorage 등에 저장 가능
             }
           }
 
@@ -81,27 +89,33 @@ export default function KakaoLogin() {
 
     try {
       const result = await WebBrowser.openAuthSessionAsync(kakaoAuthUrl, redirectUri);
+      console.log('WebBrowser 결과:', result);
+
       if (result.type === 'success' && result.url) {
         const parsed = Linking.parse(result.url);
         const code = parsed.queryParams?.code;
+        console.log('인가 코드 (handleKakaoLogin):', code);
+        Alert.alert('인가 코드 (handleKakaoLogin)', code || '인가 코드가 없습니다');
 
         if (code) {
           const response = await axios.get(
             `${API_URL}/auth/login/kakao?code=${code}&redirect_uri=${encodeURIComponent(redirectUri)}`
           );
+          console.log('서버 응답 (handleKakaoLogin):', response.data);
+          Alert.alert('로그인 성공 (handleKakaoLogin)', JSON.stringify(response.data));
+
           const token = response.data.data.token;
           const kakaoAccessToken = response.data.data.kakaoAccessToken;
 
-          Alert.alert('로그인 성공', `Token: ${token}`);
-
           if (kakaoAccessToken) {
             const userInfo = await getUserInfo(kakaoAccessToken);
+            console.log('카카오 사용자 정보:', userInfo);
             if (userInfo) {
               const email = userInfo.kakao_account.email;
               const nickname = userInfo.kakao_account.profile.nickname;
               console.log('Email:', email);
               console.log('Nickname:', nickname);
-              // 저장 처리
+              // 저장 처리 가능
             }
           }
 
