@@ -1,4 +1,3 @@
-// app/(tabs)/mypage.js
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -9,7 +8,7 @@ const dummyUser = {
   name: '홍길동',
   email: 'test@example.com',
   nickname: '슛포인터',
-  profileImage: 'https://picsum.photos/200', // 랜덤 프로필
+  profileImage: 'https://picsum.photos/200',
 };
 
 export default function MyPageScreen() {
@@ -17,11 +16,16 @@ export default function MyPageScreen() {
   const [user, setUser] = useState(null);
 
   useEffect(() => {
-    // 서버 대신 더미데이터 불러오기
     setUser(dummyUser);
   }, []);
 
-  if (!user) return <Text style={{ color: '#fff' }}>로딩 중...</Text>;
+  if (!user) {
+    return (
+      <View style={styles.loadingContainer}>
+        <Text style={{ color: '#fff' }}>로딩 중...</Text>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -48,13 +52,22 @@ export default function MyPageScreen() {
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>내 활동</Text>
         <View style={styles.buttonRow}>
-          <TouchableOpacity style={styles.actionButton}>
+          <TouchableOpacity 
+            style={styles.actionButton}
+            onPress={() => router.push("/mypage/liked")}
+          >
             <Text style={styles.actionText}>좋아요한 글</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.actionButton}>
+          <TouchableOpacity 
+            style={styles.actionButton}
+            onPress={() => router.push("/mypage/saved")}
+          >
             <Text style={styles.actionText}>저장한 글</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.actionButton}>
+          <TouchableOpacity 
+            style={styles.actionButton}
+            onPress={() => router.push("/mypage/myposts")}
+          >
             <Text style={styles.actionText}>게시한 글</Text>
           </TouchableOpacity>
         </View>
@@ -71,35 +84,16 @@ export default function MyPageScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 20, backgroundColor: '#111111' },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 20,
-    marginTop: 20,
-  },
+  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#111' },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginVertical: 20 },
   title: { fontSize: 24, fontWeight: 'bold', color: '#ccc' },
   settingsButton: { paddingHorizontal: 10, paddingVertical: 5 },
   settingsText: { color: '#6C63FF', fontWeight: 'bold', fontSize: 16 },
-  section: {
-    backgroundColor: '#1A1A1A',
-    borderRadius: 12,
-    padding: 15,
-    marginBottom: 20,
-    alignItems: 'center',
-  },
-  sectionTitle: { fontSize: 18, fontWeight: 'bold', marginBottom: 10, color: '#FFFFFF' },
-  infoText: { fontSize: 16, marginBottom: 5, color: '#FFFFFF' },
+  section: { backgroundColor: '#1A1A1A', borderRadius: 12, padding: 15, marginBottom: 20, alignItems: 'center' },
+  sectionTitle: { fontSize: 18, fontWeight: 'bold', marginBottom: 10, color: '#fff' },
+  infoText: { fontSize: 16, marginBottom: 5, color: '#fff' },
   profileImage: { width: 100, height: 100, borderRadius: 50, marginBottom: 15 },
-  buttonRow: { flexDirection: 'row', justifyContent: 'space-between' },
-  actionButton: {
-    flex: 1,
-    marginHorizontal: 5,
-    borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 10,
-    backgroundColor: '#333',
-  },
-  actionText: { color: '#FFFFFF', fontWeight: 'bold', fontSize: 14 },
+  buttonRow: { flexDirection: 'row', justifyContent: 'space-around', width: '100%' },
+  actionButton: { flex: 1, marginHorizontal: 5, borderRadius: 8, alignItems: 'center', justifyContent: 'center', paddingVertical: 10, backgroundColor: '#333' },
+  actionText: { color: '#fff', fontWeight: 'bold', fontSize: 14 },
 });

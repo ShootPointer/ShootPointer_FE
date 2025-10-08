@@ -11,7 +11,7 @@ import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter } from 'expo-router';
 const REST_API_KEY = "2d02b80c257c10b0bcd5f762ba607f0d";
-const REDIRECT_URI = "http://192.168.76.167:8081";
+const REDIRECT_URI = "https://5101af1ef8e9.ngrok-free.app";
 const API_URL = "http://tkv00.ddns.net:9000/kakao/callback";
 
 export default function KakaoWebViewLogin() {
