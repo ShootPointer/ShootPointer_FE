@@ -1,6 +1,10 @@
 import React, { useEffect, useState } from "react";
 import { Stack } from "expo-router";
-import { ThemeProvider, DarkTheme, DefaultTheme } from "@react-navigation/native";
+import {
+  ThemeProvider,
+  DarkTheme,
+  DefaultTheme,
+} from "@react-navigation/native";
 import { StatusBar } from "expo-status-bar";
 import { useFonts } from "expo-font";
 import { useColorScheme } from "../hooks/use-color-scheme";
@@ -44,6 +48,15 @@ export default function RootLayout() {
             }}
           />
           <Stack.Screen name="kakaowebview" options={{ headerShown: false }} />
+          <Stack.Screen
+            name="CommentScreen"
+            options={{
+              title: "댓글",
+              headerTitleAlign: "center",
+              headerStyle: { backgroundColor: "#111" },
+              headerTintColor: "#fff",
+            }}
+          />
         </Stack>
       )}
       <StatusBar style="auto" />

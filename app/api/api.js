@@ -2,7 +2,7 @@ import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const api = axios.create({
-  baseURL: "http://tkv00.ddns.net:9000", // 서버 주소
+  baseURL: "https://tkv00.ddns.net", // 서버 주소
   headers: {
     "Content-Type": "application/json",
   },
@@ -54,7 +54,7 @@ const refreshToken = async (email) => {
   if (!refreshToken) throw new Error("No refresh token available");
 
   const response = await axios.post(
-    `http://tkv00.ddns.net:9000/token/refresh/${email}`,
+    `https://tkv00.ddns.net/token/refresh/${email}`,
     { token: refreshToken }
   );
 
@@ -62,35 +62,45 @@ const refreshToken = async (email) => {
 };
 
 export default api;
-
-/** 🗑 게시물 삭제 */
+// -------------------------
+// 📌 게시물 API
 export const deletePost = async (postId) => {
   const res = await api.delete(`/api/post/${postId}`);
   return res.data;
 };
 
-/** ✏ 게시물 수정 */
 export const updatePost = async (postId, updatedData) => {
   const res = await api.put(`/api/post/${postId}`, updatedData);
   return res.data;
 };
 
-/** ❤️ 좋아요 */
 export const likePost = async (postId) => {
-  try {
-    console.log("[likePost] 요청 시작 → postId:", postId);
-    const response = await api.post(`/api/like/${postId}`);
-    console.log("[likePost] 응답 수신:", response.data);
-    return response.data;
-  } catch (err) {
-    console.error("[likePost] 요청 실패:", err);
-    throw err;
-  }
+  const res = await api.post(`/api/like/${postId}`);
+  return res.data;
 };
 
-
-/** 💔 좋아요 취소 */
 export const unlikePost = async (postId) => {
   const res = await api.delete(`/api/like/${postId}`);
+  return res.data;
+};
+
+// 💬 댓글 API
+export const getComments = async (postId) => {
+  const res = await api.get(`/api/comment`, { postId: { postId } });
+  return res.data;
+};
+
+export const addComment = async (postId, content) => {
+  const res = await api.post(`/api/comment`, { postId, content });
+  return res.data;
+};
+
+export const deleteComment = async (commentId) => {
+  const res = await api.delete(`/api/comment/${commentId}`);
+  return res.data;
+};
+
+export const updateComment = async (commentId, content) => {
+  const res = await api.patch(`/api/comment/${commentId}`, { content });
   return res.data;
 };

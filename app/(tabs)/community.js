@@ -7,15 +7,15 @@ import {
   FlatList,
   TouchableOpacity,
   Image,
-  Modal,
-  Alert,
   ActivityIndicator,
   TextInput,
+  Alert,
 } from "react-native";
 import { Video } from "expo-av";
 import { useNavigation } from "@react-navigation/native";
-import { deletePost, likePost, unlikePost } from "../api/api";
+import { likePost, unlikePost } from "../api/api";
 import api from "../api/api";
+import { useRouter } from "expo-router";
 
 export default function CommunityScreen() {
   const navigation = useNavigation();
@@ -32,8 +32,10 @@ export default function CommunityScreen() {
   const [searchResults, setSearchResults] = useState([]);
   const [searchLoading, setSearchLoading] = useState(false);
   const [suggestions, setSuggestions] = useState([]);
+const router = useRouter();
 
-  // 게시물 불러오기
+  // -------------------------
+// 게시물 불러오기
   const fetchPosts = async (loadMore = false) => {
     if (loadingMore || (!hasMore && loadMore)) return;
     setLoadingMore(true);
@@ -80,10 +82,11 @@ export default function CommunityScreen() {
 
   const handleLoadMore = () => fetchPosts(true);
 
+  // -------------------------
   // 좋아요
   const toggleLike = async (postId, liked) => {
     try {
-      let result = liked ? await unlikePost(postId) : await likePost(postId);
+      const result = liked ? await unlikePost(postId) : await likePost(postId);
       if (result.success) {
         setPosts((prev) =>
           prev.map((post) =>
@@ -102,6 +105,7 @@ export default function CommunityScreen() {
     }
   };
 
+  // -------------------------
   // 북마크
   const toggleBookmark = (postId) => {
     setPosts((prev) =>
@@ -111,7 +115,8 @@ export default function CommunityScreen() {
     );
   };
 
-  // 🔸 검색 제안 처리
+  // -------------------------
+  // 검색 제안
   const handleSearchChange = async (text) => {
     setSearchText(text);
     if (text.trim() === "") {
@@ -120,18 +125,12 @@ export default function CommunityScreen() {
       return;
     }
 
-    console.log("🔸 Suggest 요청 보냄:", text);
-
     try {
       const suggestionRes = await api.get("/api/post/suggest", {
         params: { keyword: text },
       });
-
-      console.log("🔹 Suggest 전체 응답:", suggestionRes.data);
-
       if (suggestionRes.data.success) {
         const data = suggestionRes.data.data || [];
-        // 객체 안의 suggest 값만 추출
         const suggestionList = Array.isArray(data)
           ? data.map((item) => item.suggest || item)
           : [];
@@ -140,12 +139,13 @@ export default function CommunityScreen() {
         setSuggestions([]);
       }
     } catch (err) {
-      console.error("❌ Suggest API 호출 에러:", err);
+      console.error("Suggest API 호출 에러:", err);
       setSuggestions([]);
     }
   };
 
-  // 🔸 실제 검색 실행 (엔터 또는 제안 클릭 시)
+  // -------------------------
+  // 검색 실행
   const handleSearchSubmit = async (query) => {
     setSearchLoading(true);
     setSuggestions([]);
@@ -155,7 +155,6 @@ export default function CommunityScreen() {
       const response = await api.get("/api/post/list-elastic", {
         params: { search: query, postId: null, size: 10 },
       });
-
       if (response.data.success) {
         const resultPosts = response.data.data.postList || [];
         setSearchResults(
@@ -181,6 +180,7 @@ export default function CommunityScreen() {
     }
   };
 
+  // -------------------------
   // 게시물 렌더링
   const renderItem = ({ item }) => (
     <View style={styles.post}>
@@ -204,7 +204,6 @@ export default function CommunityScreen() {
 
       <View style={styles.bottomActions}>
         <View style={styles.leftActions}>
-          {/* ❤️ 좋아요 */}
           <TouchableOpacity
             onPress={() => toggleLike(item.postId, item.likedByMe)}
             style={styles.iconButton}
@@ -220,20 +219,23 @@ export default function CommunityScreen() {
             <Text style={styles.likeCount}>{item.likes}</Text>
           </TouchableOpacity>
 
-          {/* 💬 댓글 */}
           <TouchableOpacity
-            style={styles.iconButton}
-            onPress={() =>
-              navigation.navigate("CommentScreen", { postId: item.postId })
-            }
-          >
-            <Image
-              source={require("../../assets/images/Comment.png")}
-              style={styles.icon}
-            />
-          </TouchableOpacity>
+  style={styles.iconButton}
+  onPress={() => {
+    console.log("Navigate params:", { postId: item.postId });
+    router.push({
+      pathname: "/CommentScreen",
+      params: { postId: String(item.postId) }, // 문자열로 전달
+    });
+  }}
+>
+  <Image
+    source={require("../../assets/images/Comment.png")}
+    style={styles.icon}
+  />
+</TouchableOpacity>
 
-          {/* ✈ 전송 */}
+
           <TouchableOpacity
             style={styles.iconButton}
             onPress={() => Alert.alert("공유", "이 게시물의 링크를 복사했습니다!")}
@@ -245,7 +247,6 @@ export default function CommunityScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* 📌 북마크 */}
         <TouchableOpacity
           onPress={() => toggleBookmark(item.postId)}
           style={styles.iconButton}
@@ -263,9 +264,9 @@ export default function CommunityScreen() {
     </View>
   );
 
+  // -------------------------
   return (
     <View style={styles.container}>
-      {/* 검색 버튼 */}
       {!searchVisible && (
         <TouchableOpacity
           style={styles.searchButton}
@@ -278,10 +279,8 @@ export default function CommunityScreen() {
         </TouchableOpacity>
       )}
 
-      {/* 검색창 */}
       {searchVisible && (
         <View style={styles.searchContainer}>
-          {/* 뒤로가기 */}
           <TouchableOpacity
             onPress={() => {
               setSearchVisible(false);
@@ -305,21 +304,22 @@ export default function CommunityScreen() {
         </View>
       )}
 
-      {/* 검색 제안 */}
       {searchVisible && suggestions.length > 0 && (
         <View style={styles.suggestionBox}>
           {suggestions.map((s, idx) => (
-            <TouchableOpacity
-              key={idx}
-              onPress={() => handleSearchSubmit(s)}
-            >
+            <TouchableOpacity key={idx} onPress={() => handleSearchSubmit(s)}>
               <Text style={styles.suggestionText}>{s}</Text>
             </TouchableOpacity>
           ))}
         </View>
       )}
 
-      {/* 게시물 목록 */}
+      {posts.length === 0 && !loadingMore && !searchVisible && (
+        <Text style={{ color: "#fff", textAlign: "center", marginTop: 50 }}>
+          게시물이 없습니다.
+        </Text>
+      )}
+
       <FlatList
         data={searchVisible ? searchResults : posts}
         renderItem={renderItem}
@@ -337,7 +337,6 @@ export default function CommunityScreen() {
         }
       />
 
-      {/* 작성 버튼 */}
       {!searchVisible && (
         <TouchableOpacity
           style={styles.fab}
@@ -352,13 +351,7 @@ export default function CommunityScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#111", padding: 15 },
-  post: {
-    padding: 15,
-    marginTop: 50,
-    backgroundColor: "#000",
-    borderRadius: 12,
-    position: "relative",
-  },
+  post: { padding: 15, marginTop: 20, backgroundColor: "#000", borderRadius: 12 },
   title: { fontWeight: "bold", color: "#fff", fontSize: 16, marginBottom: 5 },
   author: { fontWeight: "bold", color: "#fff", marginBottom: 5 },
   media: { width: "100%", height: 200, borderRadius: 10, marginBottom: 10 },
@@ -404,5 +397,10 @@ const styles = StyleSheet.create({
     padding: 10,
     marginBottom: 10,
   },
-  suggestionText: { color: "#fff", paddingVertical: 6, borderBottomWidth: 0.5, borderBottomColor: "#444" },
+  suggestionText: {
+    color: "#fff",
+    paddingVertical: 6,
+    borderBottomWidth: 0.5,
+    borderBottomColor: "#444",
+  },
 });

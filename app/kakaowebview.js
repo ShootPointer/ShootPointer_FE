@@ -10,10 +10,15 @@ import { WebView } from "react-native-webview";
 import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter } from "expo-router";
+import { 
+  EXPO_PUBLIC_KAKAO_REST_API_KEY, 
+  EXPO_PUBLIC_REDIRECT_URI, 
+  EXPO_PUBLIC_API_URL 
+} from "@env";
 
-const REST_API_KEY = "2d02b80c257c10b0bcd5f762ba607f0d";
-const REDIRECT_URI = "https://synechistic-lakesha-consolatory.ngrok-free.dev"; // 필요시 실제 도메인으로 교체
-const API_URL = "http://tkv00.ddns.net:9000/kakao/callback";
+const REST_API_KEY = EXPO_PUBLIC_KAKAO_REST_API_KEY;
+const REDIRECT_URI = EXPO_PUBLIC_REDIRECT_URI;
+const API_URL = EXPO_PUBLIC_API_URL;
 
 export default function KakaoWebViewLogin() {
   const [loading, setLoading] = useState(false);
@@ -26,7 +31,7 @@ export default function KakaoWebViewLogin() {
     setLoading(true);
     try {
       const response = await axios.get(
-        `${API_URL}?code=${code}}`
+        `${API_URL}?code=${code}`
       );
       console.log("✅ 백엔드 응답:", response.data);
 
@@ -45,6 +50,7 @@ export default function KakaoWebViewLogin() {
       console.log("🟢 Refresh Token:", refreshToken);
 
       if (!accessToken) {
+        
         Alert.alert("로그인 실패", "토큰 발급에 실패했습니다.");
         return;
       }
@@ -55,6 +61,7 @@ export default function KakaoWebViewLogin() {
       setLoginFinished(true); // WebView 언마운트
       router.replace('/'); // 홈 화면으로 이동
     } catch (error) {
+      console.error("❌ 토큰 요청 에러:", error);
       Alert.alert("로그인 실패", error.message || "토큰 요청에 실패했습니다.");
     } finally {
       setLoading(false);
