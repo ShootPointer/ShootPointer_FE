@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity, StyleSheet, Switch, Image, Animated } fro
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter, Stack } from 'expo-router';
 import ConfirmModal from './ConfirmModal';
+import api from "./api/api";
 
 export default function SettingsScreen() {
   const router = useRouter();
@@ -45,21 +46,35 @@ export default function SettingsScreen() {
   };
 
   const handleConfirm = async () => {
-    setModalVisible(false);
+  setModalVisible(false);
 
+  try {
     if (modalAction === 'logout') {
+      // 로그아웃 처리
       await AsyncStorage.removeItem('accessToken');
       await AsyncStorage.removeItem('refreshToken');
       router.replace('/login');
     } else if (modalAction === 'delete') {
-      await AsyncStorage.clear();
-      router.replace('/login');
+      // ✅ 회원 탈퇴 API 호출
+      const response = await api.delete('/kakao'); // DELETE 형식, 엔드포인트 확인 필요
+      console.log("✅ 회원탈퇴 API 성공:", response.data);
+
+      if (response.data.success) {
+        // 탈퇴 성공 시 로컬 데이터 삭제 후 로그인 화면 이동
+        await AsyncStorage.clear();
+        router.replace('/login');
+      } else {
+        alert("회원 탈퇴 실패: " + response.data.error?.message);
+      }
     } else if (modalAction === 'notification') {
       setNotificationsEnabled(false);
       showToast();
     }
-  };
-
+  } catch (err) {
+    console.error("❌ 회원탈퇴 API 실패:", err);
+    alert("회원 탈퇴 중 오류가 발생했습니다.");
+  }
+};
   return (
     <>
       <Stack.Screen options={{ headerShown: false }} />

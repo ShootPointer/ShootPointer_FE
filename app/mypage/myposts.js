@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -14,67 +14,73 @@ import {
 } from "react-native";
 import { Video } from "expo-av";
 import { Stack, useRouter } from "expo-router";
+import api from "../api/api"; // ✅ api 훅 사용 (axios instance)
 
 const { height } = Dimensions.get("window");
 
 export default function MyPostsScreen() {
   const router = useRouter();
 
-  // ✅ 게시물 구조 수정 (highlightId, title, content, hashTag)
-  const [posts, setPosts] = useState(
-    Array.from({ length: 8 }).map((_, i) => ({
-      highlightId: `highlight-${i + 1}`,
-      title: `하이라이트 영상 ${i + 1}`,
-      content: `이것은 게시물 ${i + 1}의 내용입니다.`,
-      hashTag: i % 2 === 0 ? "TWO_POINT" : "THREE_POINT",
-      type: i % 2 === 0 ? "image" : "video",
-      media:
-        i % 2 === 0
-          ? "https://picsum.photos/400/300"
-          : "https://www.w3schools.com/html/mov_bbb.mp4",
-      likes: Math.floor(Math.random() * 50),
-      likedByMe: i % 2 === 0,
-    }))
-  );
-
+  const [posts, setPosts] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
+  const [lastPostId, setLastPostId] = useState(null);
+
   const [selectedPost, setSelectedPost] = useState(null);
   const [modalVisible, setModalVisible] = useState(false);
   const slideAnim = useState(new Animated.Value(height))[0];
 
-  // ✅ 무한 스크롤
-  const loadMorePosts = () => {
-    if (loadingMore) return;
-    setLoadingMore(true);
+  // ✅ 게시물 불러오기 (GET)
+  const fetchPosts = async (isLoadMore = false) => {
+    try {
+      const url =
+        isLoadMore && lastPostId
+          ? `/api/post/mypage?lastPostId=${lastPostId}`
+          : `/api/post/mypage`;
 
-    setTimeout(() => {
-      const more = Array.from({ length: 8 }).map((_, i) => ({
-        highlightId: `highlight-${posts.length + i + 1}`,
-        title: `하이라이트 영상 ${posts.length + i + 1}`,
-        content: `이것은 게시물 ${posts.length + i + 1}의 내용입니다.`,
-        hashTag: (posts.length + i) % 2 === 0 ? "TWO_POINT" : "THREE_POINT",
-        type: (posts.length + i) % 2 === 0 ? "image" : "video",
-        media:
-          (posts.length + i) % 2 === 0
-            ? "https://picsum.photos/400/300"
-            : "https://www.w3schools.com/html/mov_bbb.mp4",
-        likes: Math.floor(Math.random() * 50),
-        likedByMe: false,
-      }));
-      setPosts((prev) => [...prev, ...more]);
+      const response = await api.get(url);
+      const resData = response.data?.data;
+    console.log("✅ API 요청 성공:", response.data);
+
+      if (resData?.postList) {
+        if (isLoadMore) {
+          setPosts((prev) => [...prev, ...resData.postList]);
+        } else {
+          setPosts(resData.postList);
+        }
+        setLastPostId(resData.lastPostId);
+      } else {
+        setPosts([]);
+      }
+    } catch (err) {
+      console.error(err);
+      Alert.alert("불러오기 실패", "게시물을 불러오지 못했습니다.");
+    } finally {
+      setLoading(false);
       setLoadingMore(false);
-    }, 1000);
+    }
   };
 
-  // ✅ 좋아요 토글
-  const toggleLike = (highlightId) => {
+  useEffect(() => {
+    fetchPosts();
+  }, []);
+
+  // ✅ 무한 스크롤
+  const loadMorePosts = () => {
+    if (loadingMore || !lastPostId) return;
+    setLoadingMore(true);
+    fetchPosts(true);
+  };
+
+  // ✅ 좋아요 토글 (임시)
+  const toggleLike = (postId) => {
     setPosts((prev) =>
       prev.map((p) =>
-        p.highlightId === highlightId
+        p.postId === postId
           ? {
               ...p,
               likedByMe: !p.likedByMe,
-              likes: p.likedByMe ? p.likes - 1 : p.likes + 1,
+              likeCnt: p.likedByMe ? p.likeCnt - 1 : p.likeCnt + 1,
             }
           : p
       )
@@ -110,7 +116,7 @@ export default function MyPostsScreen() {
     router.push({
       pathname: "/mypage/editpost",
       params: {
-        highlightId: selectedPost.highlightId,
+        postId: selectedPost.postId,
         title: selectedPost.title,
         content: selectedPost.content,
         hashTag: selectedPost.hashTag,
@@ -118,7 +124,7 @@ export default function MyPostsScreen() {
     });
   };
 
-  // ✅ 삭제 (API는 나중에)
+  // ✅ 삭제 (API 나중에 연결)
   const handleDelete = async () => {
     if (!selectedPost) return;
     closeModal();
@@ -130,7 +136,7 @@ export default function MyPostsScreen() {
         onPress: async () => {
           try {
             setPosts((prev) =>
-              prev.filter((p) => p.highlightId !== selectedPost.highlightId)
+              prev.filter((p) => p.postId !== selectedPost.postId)
             );
             Alert.alert("삭제 완료", "게시물이 삭제되었습니다.");
           } catch (e) {
@@ -146,16 +152,16 @@ export default function MyPostsScreen() {
     <View style={styles.post}>
       <Text style={styles.title}>{item.title}</Text>
 
-      {item.type === "image" ? (
-        <Image source={{ uri: item.media }} style={styles.media} />
-      ) : (
+      {item.highlightUrl?.endsWith(".mp4") ? (
         <Video
-          source={{ uri: item.media }}
+          source={{ uri: item.highlightUrl }}
           style={styles.media}
           useNativeControls
           resizeMode="cover"
           isLooping
         />
+      ) : (
+        <Image source={{ uri: item.highlightUrl }} style={styles.media} />
       )}
 
       <Text style={styles.description}>{item.content}</Text>
@@ -164,7 +170,7 @@ export default function MyPostsScreen() {
       <View style={styles.bottomActions}>
         <View style={styles.leftActions}>
           <TouchableOpacity
-            onPress={() => toggleLike(item.highlightId)}
+            onPress={() => toggleLike(item.postId)}
             style={styles.iconButton}
           >
             <Image
@@ -175,7 +181,7 @@ export default function MyPostsScreen() {
               }
               style={styles.icon}
             />
-            <Text style={styles.likeCount}>{item.likes}</Text>
+            <Text style={styles.likeCount}>{item.likeCnt}</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -211,6 +217,37 @@ export default function MyPostsScreen() {
     </View>
   );
 
+  if (loading) {
+    return (
+      <View style={[styles.container, { justifyContent: "center", alignItems: "center" }]}>
+        <ActivityIndicator size="large" color="#ff6a33" />
+      </View>
+    );
+  }
+
+  // ✅ 게시물 없을 때 문구 표시
+  if (!loading && posts.length === 0) {
+    return (
+      <View style={styles.container}>
+        <Stack.Screen options={{ headerShown: false }} />
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => router.back()}>
+            <Image
+              source={require("../../assets/images/back.png")}
+              style={styles.backIcon}
+            />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>내 게시물</Text>
+          <View style={{ width: 28 }} />
+        </View>
+
+        <View style={styles.emptyContainer}>
+          <Text style={styles.emptyText}>게시물이 없습니다.</Text>
+        </View>
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
       <Stack.Screen options={{ headerShown: false }} />
@@ -228,7 +265,7 @@ export default function MyPostsScreen() {
       <FlatList
         data={posts}
         renderItem={renderItem}
-        keyExtractor={(item) => item.highlightId}
+        keyExtractor={(item) => item.postId.toString()}
         onEndReached={loadMorePosts}
         onEndReachedThreshold={0.5}
         ListFooterComponent={
@@ -304,4 +341,6 @@ const styles = StyleSheet.create({
   },
   headerTitle: { color: "#fff", fontSize: 18, fontWeight: "bold" },
   backIcon: { width: 28, height: 28, tintColor: "#fff" },
+  emptyContainer: { flex: 1, justifyContent: "center", alignItems: "center" },
+  emptyText: { color: "#888", fontSize: 16 },
 });

@@ -1,26 +1,48 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, StyleSheet, TouchableOpacity, Image } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, Image, ActivityIndicator } from "react-native";
 import { useRouter } from "expo-router";
-
-const dummyUser = {
-  id: 1,
-  name: "백진욱",
-  number: "No.3",
-  profileImage: "https://picsum.photos/200", // 실제 프로필 이미지 경로로 교체
-};
+import api from "../api/api"; // axios instance
 
 export default function MyPointerScreen() {
   const router = useRouter();
   const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    setUser(dummyUser);
+    const fetchUser = async () => {
+      try {
+        const response = await api.get("/kakao/me");
+        console.log("✅ GET /kakao/me 성공:", response.data);
+
+        const data = response.data; // example: { memberId, email, username }
+        setUser({
+          username: data.username,
+          email: data.email,
+          profileImage: "https://picsum.photos/200", // 필요시 프로필 이미지 API로 교체
+        });
+      } catch (err) {
+        console.error("❌ GET /kakao/me 실패:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUser();
   }, []);
+
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#ff6a33" />
+        <Text style={{ color: "#fff", marginTop: 10 }}>로딩 중...</Text>
+      </View>
+    );
+  }
 
   if (!user) {
     return (
       <View style={styles.loadingContainer}>
-        <Text style={{ color: "#fff" }}>로딩 중...</Text>
+        <Text style={{ color: "#fff" }}>유저 정보를 불러오지 못했습니다.</Text>
       </View>
     );
   }
@@ -40,20 +62,21 @@ export default function MyPointerScreen() {
 
       {/* 슬로건 */}
       <View style={styles.sloganBox}>
-  <Image
-    source={require("../../assets/images/Ballpointer.png")}
-    style={styles.ballpointerIcon}
-  />
-  <Text style={styles.sloganText}>
-    골 넣는 순간의 짜릿함, 슛포인터와 함께해요!
-  </Text>
-</View>
+        <Image
+          source={require("../../assets/images/Ballpointer.png")}
+          style={styles.ballpointerIcon}
+        />
+        <Text style={styles.sloganText}>
+          골 넣는 순간의 짜릿함, 슛포인터와 함께해요!
+        </Text>
+      </View>
+
       {/* 프로필 카드 */}
       <View style={styles.profileCard}>
         <Image source={{ uri: user.profileImage }} style={styles.profileImage} />
         <View style={styles.profileInfo}>
-          <Text style={styles.userName}>{user.name}</Text>
-          <Text style={styles.userNumber}>{user.number}</Text>
+          <Text style={styles.userName}>{user.username}</Text>
+          <Text style={styles.userEmail}>{user.email}</Text>
         </View>
       </View>
 
@@ -69,7 +92,6 @@ export default function MyPointerScreen() {
           />
           <Text style={styles.actionText}>좋아요한 글</Text>
         </TouchableOpacity>
-
 
         <TouchableOpacity
           style={styles.actionButton}
@@ -108,7 +130,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     backgroundColor: "#111",
-
   },
   header: {
     flexDirection: "row",
@@ -121,11 +142,20 @@ const styles = StyleSheet.create({
   settingsIcon: { width: 24, height: 24, tintColor: "#ccc" },
 
   sloganBox: {
+    flexDirection: "row",
+    alignItems: "center",
     backgroundColor: "#1f1f1f",
     borderRadius: 10,
     padding: 10,
-    alignItems: "center",
     marginBottom: 15,
+  },
+  ballpointerIcon: {
+    width: 40,
+    height: 40,
+    resizeMode: "contain",
+    tintColor: "#FF6B00",
+    marginLeft: 10,
+    marginRight: 10,
   },
   sloganText: { color: "#ccc", fontSize: 14 },
 
@@ -140,7 +170,7 @@ const styles = StyleSheet.create({
   profileImage: { width: 70, height: 70, borderRadius: 35, marginRight: 15 },
   profileInfo: {},
   userName: { color: "#fff", fontSize: 18, fontWeight: "bold" },
-  userNumber: { color: "#bbb", fontSize: 14 },
+  userEmail: { color: "#bbb", fontSize: 14 },
 
   buttonRow: {
     flexDirection: "row",
@@ -164,38 +194,8 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     padding: 15,
   },
-  historyTitle: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "bold",
-    marginBottom: 10,
-  },
-  historyItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 10,
-  },
+  historyTitle: { color: "#fff", fontSize: 16, fontWeight: "bold", marginBottom: 10 },
+  historyItem: { flexDirection: "row", alignItems: "center", paddingVertical: 10 },
   historyIcon: { width: 20, height: 20, marginRight: 10, tintColor: "#fff" },
   historyText: { color: "#fff", fontSize: 15 },
-  sloganBox: {
-  flexDirection: "row", // 가로로 정렬
-  alignItems: "center", // 세로 가운데 정렬
-  backgroundColor: "#1f1f1f",
-  borderRadius: 10,
-  padding: 10,
-  marginBottom: 15,
-},
-ballpointerIcon: {
-  width: 40,   // 필요에 따라 조절
-  height: 40,
-  resizeMode: "contain",
-  tintColor: "#FF6B00",
-  marginLeft:10,
-  marginRight:10,
-},
-sloganText: { 
-  color: "#ccc", 
-  fontSize: 14 
-},
-
 });
