@@ -97,9 +97,9 @@ const FrontendUpload = ({ jerseyNumber, frontImage }) => {
 
       const formData = new FormData();
       formData.append("file", {
-        uri: video.uri,
+        name: `${video.name}.part${chunkIndex}`,
         type: video.type,
-        name: video.name,
+        data: buffer,
       });
       formData.append("presigned", JSON.stringify(presignedUrl));
       formData.append("chunkIndex", chunkIndex.toString());
@@ -170,18 +170,21 @@ const FrontendUpload = ({ jerseyNumber, frontImage }) => {
       //   });
       // }
 
-      // 등번호와 촬영 사진도 같이
-      formData.append(
-        "backNumberRequestDto",
-        JSON.stringify({ backNumber: Number(jerseyNumber) })
-      );
-      if (frontImage) {
-        formData.append("image", {
-          uri: frontImage,
-          name: "photo.jpg",
-          type: "image/jpeg",
-        });
-      }
+      const img = {
+        uri: frontImage.uri,
+        name: "photo.jpg",
+        type: "image/jpeg",
+      };
+      const backNumberData = {
+        backNumber: Number(jerseyNumber),
+      };
+      console.log(backNumberData);
+      formData.append("backNumberRequestDto", {
+        "string": JSON.stringify(backNumberData),
+        type: "application/json",
+      });
+
+      formData.append("image", img);
       console.log("폼 데이터 준비 완료, 업로드 시작", formData);
       const res = await api.post(
         "https://tkv00.ddns.net/api/backNumber",
@@ -192,15 +195,19 @@ const FrontendUpload = ({ jerseyNumber, frontImage }) => {
           },
         }
       );
-      if (res.status === 200) {
-        console.log("번호, 등 사진 업로드 성공:");
-        setVideoOk(true);
-      }
 
-      // setUploadResult("✅ 업로드 성공: " + JSON.stringify(res.data));
+      if (res.status === 200 && res.data.success === true) {
+        console.log(res.data);
+        console.log("번호, 등 사진 업로드 성공");
+        setVideoOk(true);
+      } else {
+        console.log(res.data);
+        Alert.alert("업로드 실패" || "오류 발생");
+      }
     } catch (error) {
       console.error("❌ 오류:", error);
-      Alert.alert("업로드 실패", error?.message || "오류 발생");
+      console.log("catch문 안");
+      Alert.alert("업로드 실패", error || "오류 발생");
     } finally {
       setIsUploading(false);
     }
@@ -215,7 +222,7 @@ const FrontendUpload = ({ jerseyNumber, frontImage }) => {
           </Text>
           {frontImage && (
             <Image
-              source={{ uri: frontImage }}
+              source={{ uri: frontImage.uri }}
               style={{ width: 330, height: 500, marginBottom: 10 }}
             />
           )}
