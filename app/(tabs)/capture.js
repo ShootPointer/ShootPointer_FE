@@ -1,14 +1,14 @@
-import React, { useState, useRef } from "react";
+import { CameraView, useCameraPermissions } from "expo-camera";
+import { useRef, useState } from "react";
 import {
-  View,
+  Keyboard,
+  StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
   TouchableWithoutFeedback,
-  Keyboard,
-  StyleSheet,
+  View,
 } from "react-native";
-import { CameraView, useCameraPermissions } from "expo-camera";
 import FrontendUpload from "../FrontendUpload";
 
 export default function CaptureScreen() {
@@ -60,7 +60,7 @@ export default function CaptureScreen() {
                   value={jerseyNumber[0] || ""}
                   onChangeText={(t) =>
                     setJerseyNumber((prev) =>
-                      t ? t[0] + (prev[1] || "") : (prev[1] || "")
+                      t ? t[0] + (prev[1] || "") : prev[1] || ""
                     )
                   }
                   maxLength={1}
@@ -118,7 +118,10 @@ export default function CaptureScreen() {
 
         {step === "upload" && (
           <>
-            <FrontendUpload jerseyNumber={jerseyNumber} frontImage={frontImage} />
+            <FrontendUpload
+              jerseyNumber={jerseyNumber}
+              frontImage={frontImage}
+            />
             <View style={styles.buttonContainer}>
               <TouchableOpacity
                 style={styles.captureButton}
@@ -141,7 +144,13 @@ export default function CaptureScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#111", padding: 20 },
   topLabel: { position: "absolute", top: 120, left: 20 },
-  inlineLabel: { position: "absolute", top: 160, left: 20, flexDirection: "row", alignItems: "center" },
+  inlineLabel: {
+    position: "absolute",
+    top: 160,
+    left: 20,
+    flexDirection: "row",
+    alignItems: "center",
+  },
   whiteText: { color: "white", fontSize: 18 },
   orangeText: { color: "#ff6a33", fontSize: 18 },
   centerContainer: { flex: 1, top: "45%", alignItems: "center" },
@@ -157,7 +166,12 @@ const styles = StyleSheet.create({
     width: 130,
   },
   buttonContainer: { justifyContent: "flex-end", flex: 1 },
-  captureButton: { paddingVertical: 15, borderRadius: 10, alignItems: "center", marginBottom: 20 },
+  captureButton: {
+    paddingVertical: 15,
+    borderRadius: 10,
+    alignItems: "center",
+    marginBottom: 20,
+  },
   buttonText: { color: "white", fontSize: 18 },
   overlay: {
     position: "absolute",
@@ -189,5 +203,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: 20,
   },
-  innerCircle: { width: 60, height: 60, borderRadius: 30, backgroundColor: "white" },
+  innerCircle: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: "white",
+  },
 });

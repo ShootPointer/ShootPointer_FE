@@ -1,50 +1,55 @@
 // app/(tabs)/index.js
-import React, { useEffect, useState } from "react";
-import { View, Text, FlatList, Image, Dimensions, TouchableOpacity } from "react-native";
-import { Video } from "expo-av";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import api from "../api/api";
+import { Video } from "expo-av";
+import { useRouter } from "expo-router";
+import React, { useState } from "react";
+import {
+  Dimensions,
+  FlatList,
+  Image,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
 export default function HomeScreen() {
   const [highlights, setHighlights] = useState([]);
   const router = useRouter();
 
-  useEffect(() => {
-    const init = async () => {
-      try {
-        const res = await api.get("/api/test-member");
-        const token = res.data?.data?.accessToken ?? res.data?.accessToken ?? res.data;
-        if (token) {
-          await AsyncStorage.setItem("accessToken", token);
-          api.defaults.headers.common["Authorization"] = `Bearer ${token}`;
-          console.log("[API] 임시 AccessToken 세팅 완료");
-        }
+  // useEffect(() => {
+  //   const init = async () => {
+  //     try {
+  //       const res = await api.get("/api/test-member");
+  //       const token = res.data?.data?.accessToken ?? res.data?.accessToken ?? res.data;
+  //       if (token) {
+  //         await AsyncStorage.setItem("accessToken", token);
+  //         api.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+  //         console.log("[API] 임시 AccessToken 세팅 완료");
+  //       }
 
-        setHighlights([
-          {
-            id: "1",
-            title: "이번 주 최고의 플레이!",
-            description: "홍길동 선수의 3점 슛 🎯",
-            media: "https://picsum.photos/400/300",
-            type: "image",
-          },
-          {
-            id: "2",
-            title: "하이라이트 영상",
-            description: "김철수 선수의 멋진 덩크!",
-            media: "https://www.w3schools.com/html/mov_bbb.mp4",
-            type: "video",
-          },
-        ]);
-      } catch (err) {
-        console.error("초기화 실패:", err);
-      }
-    };
+  //       setHighlights([
+  //         {
+  //           id: "1",
+  //           title: "이번 주 최고의 플레이!",
+  //           description: "홍길동 선수의 3점 슛 🎯",
+  //           media: "https://picsum.photos/400/300",
+  //           type: "image",
+  //         },
+  //         {
+  //           id: "2",
+  //           title: "하이라이트 영상",
+  //           description: "김철수 선수의 멋진 덩크!",
+  //           media: "https://www.w3schools.com/html/mov_bbb.mp4",
+  //           type: "video",
+  //         },
+  //       ]);
+  //     } catch (err) {
+  //       console.error("초기화 실패:", err);
+  //     }
+  //   };
 
-    init();
-  }, []);
+  //   init();
+  // }, []);
 
   const renderHighlight = ({ item }) => (
     <View style={styles.card}>
@@ -158,7 +163,12 @@ const styles = {
     shadowRadius: 4,
     elevation: 3,
   },
-  cardTitle: { fontSize: 16, fontWeight: "bold", color: "#fff", marginBottom: 10 },
+  cardTitle: {
+    fontSize: 16,
+    fontWeight: "bold",
+    color: "#fff",
+    marginBottom: 10,
+  },
   cardMedia: { width: "100%", height: 180, borderRadius: 10, marginBottom: 10 },
   cardDesc: { color: "#ddd", marginBottom: 10 },
   cardButton: {
