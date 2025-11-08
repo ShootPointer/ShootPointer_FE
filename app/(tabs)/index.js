@@ -105,7 +105,7 @@ export default function HomeScreen() {
       <View style={styles.bottomArea}>
         <View style={styles.infoCard}>
           <Text style={styles.infoTitle}>내 정보</Text>
-          <Text style={styles.infoContent}>홍길동님, 환영합니다!</Text>
+          <Text style={styles.infoContent}>님, 환영합니다!</Text>
           <Text style={styles.infoContent}>등번호: 23</Text>
           <Text style={styles.infoContent}>포지션: 가드</Text>
         </View>

@@ -1,3 +1,9 @@
+import * as FileSystem from "expo-file-system";
+import {
+  EncodingType,
+  getInfoAsync,
+  readAsStringAsync,
+} from "expo-file-system/legacy";
 import * as ImagePicker from "expo-image-picker";
 import { useState } from "react";
 import {
@@ -21,20 +27,6 @@ const FrontendUpload = ({ jerseyNumber, frontImage }) => {
   const [videoUpload, setVideoUpload] = useState(false);
   const [videoSetting, setVideoSetting] = useState(true);
   // const [presignedURL, setPresignedURL] = useState<String>("");
-  const CHUNK_SIZE = 10 * 1024 * 1024; // 10MB
-
-  // 파일 청크단위로 읽는 비동기 제너레이터
-  async function* readFileInChunks(filePath) {
-    const fileStat = await RNFS.stat(filePath);
-    let offset = 0;
-
-    while (offset < fileStat.size) {
-      const length = Math.min(CHUNK_SIZE, fileStat.size - offset);
-      const chunk = await RNFS.read(filePath, length, offset, "base64");
-      yield chunk;
-      offset += length;
-    }
-  }
 
   const pickVideo = async () => {
     const permissionResult =
@@ -79,7 +71,7 @@ const FrontendUpload = ({ jerseyNumber, frontImage }) => {
       });
       if (response.status === 200) {
         console.log("Presigned URL 받음:", response.data.data.presignedUrl);
-        return response.data.presignedUrl;
+        return response.data.data.presignedUrl;
       }
     } catch (error) {
       console.error("Presigned URL 요청 실패:", error);
@@ -87,32 +79,59 @@ const FrontendUpload = ({ jerseyNumber, frontImage }) => {
     }
   };
 
+  // 파일 청크단위로 읽는 비동기 제너레이터
+  async function* readFileInChunks(fileUri) {
+    const fileInfo = await getInfoAsync(fileUri, { size: true });
+    console.log("비디오 파일 크기:", fileInfo);
+    const fileSize = fileInfo.size;
+    const CHUNK_SIZE = 1024 * 1024 * 10; // 10MB
+    let offset = 0;
+
+    while (offset < fileSize) {
+      const length = Math.min(CHUNK_SIZE, fileSize - offset);
+      console.log(length);
+      const chunk = await readAsStringAsync(fileUri, {
+        encoding: EncodingType.Base64,
+        position: offset,
+        length,
+      });
+      yield chunk;
+      offset += length;
+    }
+  }
   const uploadVideoToPython = async (presignedUrl, video) => {
     if (!video || !presignedUrl) return;
 
     let chunkIndex = 0;
 
     for await (const chunk of readFileInChunks(video.uri)) {
-      const buffer = Buffer.from(chunk, "base64");
-
       const formData = new FormData();
+
+      // chunk를 data URI 형식으로 넣기
       formData.append("file", {
+        uri: `data:${video.type};base64,${chunk}`,
         name: `${video.name}.part${chunkIndex}`,
         type: video.type,
-        data: buffer,
       });
+
       formData.append("presigned", JSON.stringify(presignedUrl));
       formData.append("chunkIndex", chunkIndex.toString());
 
       try {
-        await axios.post("파이썬 주소 알고 넣기 ㄱㄱ", formData, {
-          headers: {
-            "Content-Type": "multipart/form-data",
-          },
-        });
-        console.log(`Chunk ${chunkIndex} offset 업로드 완료 ㅎㅎ`);
+        // Axios로 전송
+        const response = await api.post(
+          "http://tkv00.ddns.net:8000/api/presigned/chunk",
+          formData
+        );
+
+        if (response.status === 200) {
+          console.log(`Chunk ${chunkIndex} 업로드 완료 ㅎㅎ`);
+        } else {
+          console.error(`Chunk ${chunkIndex} 서버 오류`, response.status);
+          break;
+        }
       } catch (err) {
-        console.error(`Chunk ${chunkIndex} offset 업로드 실패 ㅜ`, err);
+        console.error(`Chunk ${chunkIndex} 업로드 실패 ㅜ`, err);
         break;
       }
 
@@ -140,7 +159,8 @@ const FrontendUpload = ({ jerseyNumber, frontImage }) => {
       }
 
       // 파이썬 서버로 업로드, 전송 데이터는 얘기 맞춰봐야할듯
-      const response = await uploadVideoToPython(presignedUrl, videoData);
+      const response = await uploadVideoToPython(presignedUrl, videoFile);
+      console.log("비디오 업로드 응답:", response);
       if (response.status === 200) {
         console.log("비디오 업로드 완료");
       }
@@ -180,7 +200,7 @@ const FrontendUpload = ({ jerseyNumber, frontImage }) => {
       };
       console.log(backNumberData);
       formData.append("backNumberRequestDto", {
-        "string": JSON.stringify(backNumberData),
+        string: JSON.stringify(backNumberData),
         type: "application/json",
       });
 
