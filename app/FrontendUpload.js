@@ -1,9 +1,4 @@
-import * as FileSystem from "expo-file-system";
-import {
-  EncodingType,
-  getInfoAsync,
-  readAsStringAsync,
-} from "expo-file-system/legacy";
+import * as FileSystem from "expo-file-system/legacy";
 import * as ImagePicker from "expo-image-picker";
 import { useState } from "react";
 import {
@@ -78,35 +73,53 @@ const FrontendUpload = ({ jerseyNumber, frontImage }) => {
       throw error;
     }
   };
-
-  // 파일 청크단위로 읽는 비동기 제너레이터
   async function* readFileInChunks(fileUri) {
-    const fileInfo = await getInfoAsync(fileUri, { size: true });
-    console.log("비디오 파일 크기:", fileInfo);
-    const fileSize = fileInfo.size;
-    const CHUNK_SIZE = 1024 * 1024 * 10; // 10MB
-    let offset = 0;
+    const chunkSize = 1024 * 1024 * 10;
+    console.log("📁 전체 파일 Base64 읽는 중...");
+    const base64 = await FileSystem.readAsStringAsync(fileUri, {
+      encoding: FileSystem.EncodingType.Base64,
+    });
+    console.log("✅ 전체 Base64 읽기 완료:", base64.length, "bytes");
 
-    while (offset < fileSize) {
-      const length = Math.min(CHUNK_SIZE, fileSize - offset);
-      console.log(length);
-      const chunk = await readAsStringAsync(fileUri, {
-        encoding: EncodingType.Base64,
-        position: offset,
-        length,
-      });
+    let offset = 0;
+    while (offset < base64.length) {
+      const chunk = base64.slice(offset, offset + chunkSize);
+      console.log("chunk:", chunk);
+      console.log(`📦 청크 생성: ${offset} ~ ${offset + chunkSize}`);
       yield chunk;
-      offset += length;
+      offset += chunkSize;
     }
   }
+  // 파일 청크단위로 읽는 비동기 제너레이터
+  // async function* readFileInChunks(fileUri) {
+  //   const fileInfo = await getInfoAsync(fileUri, { size: true });
+  //   console.log("비디오 파일:", fileInfo);
+  //   const fileSize = fileInfo.size;
+  //   const CHUNK_SIZE = 1024 * 1024 * 10; // 10MB
+  //   let offset = 0;
+
+  //   while (offset < fileSize) {
+  //     const length = Math.min(CHUNK_SIZE, fileSize - offset);
+  //     console.log("chunk length", length);
+  //     const chunk = await readAsStringAsync(fileUri, {
+  //       encoding: EncodingType.Base64,
+  //       position: offset,
+  //       length,
+  //     });
+  //     console.log("읽은 청크:", chunk);
+  //     yield chunk;
+  //     offset += length;
+  //   }
+  // }
   const uploadVideoToPython = async (presignedUrl, video) => {
     if (!video || !presignedUrl) return;
-
+    console.log("비디오 업로드 시작...");
     let chunkIndex = 0;
+    const videoInfo = await FileSystem.getInfoAsync(video.uri, { size: true });
+    const totalParts = Math.ceil(videoInfo.size / (1024 * 1024 * 10));
 
     for await (const chunk of readFileInChunks(video.uri)) {
       const formData = new FormData();
-
       // chunk를 data URI 형식으로 넣기
       formData.append("file", {
         uri: `data:${video.type};base64,${chunk}`,
@@ -114,18 +127,25 @@ const FrontendUpload = ({ jerseyNumber, frontImage }) => {
         type: video.type,
       });
 
-      formData.append("presigned", JSON.stringify(presignedUrl));
+      formData.append("presignedToken", JSON.stringify(presignedUrl));
       formData.append("chunkIndex", chunkIndex.toString());
+      formData.append("totalParts", totalParts.toString());
+      formData.append("fileName", videoName.toString());
 
       try {
         // Axios로 전송
         const response = await api.post(
           "http://tkv00.ddns.net:8000/api/presigned/chunk",
-          formData
+          formData,
+          {
+            headers: {
+              "Content-Type": "multipart/form-data",
+            },
+          }
         );
 
         if (response.status === 200) {
-          console.log(`Chunk ${chunkIndex} 업로드 완료 ㅎㅎ`);
+          console.log(`Chunk ${chunkIndex + 1}/${totalParts} 업로드 완료!!`);
         } else {
           console.error(`Chunk ${chunkIndex} 서버 오류`, response.status);
           break;
@@ -159,8 +179,16 @@ const FrontendUpload = ({ jerseyNumber, frontImage }) => {
       }
 
       // 파이썬 서버로 업로드, 전송 데이터는 얘기 맞춰봐야할듯
-      const response = await uploadVideoToPython(presignedUrl, videoFile);
-      console.log("비디오 업로드 응답:", response);
+      const uploadPromise = uploadVideoToPython(presignedUrl, videoFile);
+
+      // SSE 연결
+      const sse = new EventSource("https://tkv00.ddns.net/api/~~~~~~~~");
+      sse.onmessage = (e) => console.log("SSE 메시지:", e.data);
+
+      // 업로드 완료까지 기다림
+      const response = await uploadPromise;
+      console.log("업로드 완료:", response);
+
       if (response.status === 200) {
         console.log("비디오 업로드 완료");
       }
