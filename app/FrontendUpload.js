@@ -73,23 +73,7 @@ const FrontendUpload = ({ jerseyNumber, frontImage }) => {
       throw error;
     }
   };
-  async function* readFileInChunks(fileUri) {
-    const chunkSize = 1024 * 1024 * 10;
-    console.log("📁 전체 파일 Base64 읽는 중...");
-    const base64 = await FileSystem.readAsStringAsync(fileUri, {
-      encoding: FileSystem.EncodingType.Base64,
-    });
-    console.log("✅ 전체 Base64 읽기 완료:", base64.length, "bytes");
-
-    let offset = 0;
-    while (offset < base64.length) {
-      const chunk = base64.slice(offset, offset + chunkSize);
-      console.log("chunk:", chunk);
-      console.log(`📦 청크 생성: ${offset} ~ ${offset + chunkSize}`);
-      yield chunk;
-      offset += chunkSize;
-    }
-  }
+  
   // 파일 청크단위로 읽는 비동기 제너레이터
   // async function* readFileInChunks(fileUri) {
   //   const fileInfo = await getInfoAsync(fileUri, { size: true });
@@ -111,6 +95,23 @@ const FrontendUpload = ({ jerseyNumber, frontImage }) => {
   //     offset += length;
   //   }
   // }
+  async function* readFileInChunks(fileUri) {
+    const chunkSize = 1024 * 1024 * 10;
+    console.log("전체 파일 Base64 읽는 중...");
+    const base64 = await FileSystem.readAsStringAsync(fileUri, {
+      encoding: FileSystem.EncodingType.Base64,
+    });
+    console.log("전체 Base64 읽기 완료:", base64.length, "bytes");
+
+    let offset = 0;
+    while (offset < base64.length) {
+      const chunk = base64.slice(offset, offset + chunkSize);
+      console.log("chunk:", chunk);
+      console.log(`청크 생성: ${offset} ~ ${offset + chunkSize}`);
+      yield chunk;
+      offset += chunkSize;
+    }
+  }
   const uploadVideoToPython = async (presignedUrl, video) => {
     if (!video || !presignedUrl) return;
     console.log("비디오 업로드 시작...");
@@ -121,17 +122,18 @@ const FrontendUpload = ({ jerseyNumber, frontImage }) => {
     for await (const chunk of readFileInChunks(video.uri)) {
       const formData = new FormData();
       // chunk를 data URI 형식으로 넣기
-      formData.append("file", {
-        uri: `data:${video.type};base64,${chunk}`,
-        name: `${video.name}.part${chunkIndex}`,
-        type: video.type,
-      });
-
+      // formData.append("file", {
+      //   uri: `data:${video.type};base64,${chunk}`,
+      //   name: `${video.name}.part${chunkIndex}`,
+      //   type: video.type,
+      // });
+      formData.append("file", chunk);
       formData.append("presignedToken", JSON.stringify(presignedUrl));
       formData.append("chunkIndex", chunkIndex.toString());
       formData.append("totalParts", totalParts.toString());
       formData.append("fileName", videoName.toString());
 
+      console.log("python으로 보내는 formData:", formData);
       try {
         // Axios로 전송
         const response = await api.post(
@@ -178,12 +180,12 @@ const FrontendUpload = ({ jerseyNumber, frontImage }) => {
         return;
       }
 
-      // 파이썬 서버로 업로드, 전송 데이터는 얘기 맞춰봐야할듯
-      const uploadPromise = uploadVideoToPython(presignedUrl, videoFile);
-
       // SSE 연결
       const sse = new EventSource("https://tkv00.ddns.net/api/~~~~~~~~");
       sse.onmessage = (e) => console.log("SSE 메시지:", e.data);
+
+      // 파이썬 서버로 업로드, 전송 데이터는 얘기 맞춰봐야할듯
+      const uploadPromise = uploadVideoToPython(presignedUrl, videoFile);
 
       // 업로드 완료까지 기다림
       const response = await uploadPromise;
