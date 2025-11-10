@@ -95,71 +95,146 @@ const FrontendUpload = ({ jerseyNumber, frontImage }) => {
   //     offset += length;
   //   }
   // }
-  async function* readFileInChunks(fileUri) {
-    const chunkSize = 1024 * 1024 * 10;
-    console.log("전체 파일 Base64 읽는 중...");
-    const base64 = await FileSystem.readAsStringAsync(fileUri, {
-      encoding: FileSystem.EncodingType.Base64,
-    });
-    console.log("전체 Base64 읽기 완료:", base64.length, "bytes");
+  // async function* readFileInChunks(fileUri) {
+  //   const chunkSize = 1024 * 1024 * 10;
+  //   console.log("전체 파일 Base64 읽는 중...");
+  //   const base64 = await FileSystem.readAsStringAsync(fileUri, {
+  //     encoding: FileSystem.EncodingType.Base64,
+  //   });
+  //   console.log("전체 Base64 읽기 완료:", base64.length, "bytes");
 
-    let offset = 0;
-    while (offset < base64.length) {
-      const chunk = base64.slice(offset, offset + chunkSize);
-      console.log("chunk:", chunk);
-      console.log(`청크 생성: ${offset} ~ ${offset + chunkSize}`);
-      yield chunk;
-      offset += chunkSize;
-    }
-  }
+  //   let offset = 0;
+  //   while (offset < base64.length) {
+  //     const chunk = base64.slice(offset, offset + chunkSize);
+  //     console.log("chunk:", chunk);
+  //     console.log(`청크 생성: ${offset} ~ ${offset + chunkSize}`);
+  //     yield chunk;
+  //     offset += chunkSize;
+  //   }
+  // }
+  // const uploadVideoToPython = async (presignedUrl, video) => {
+  //   if (!video || !presignedUrl) return;
+  //   console.log("비디오 업로드 시작...");
+  //   let chunkIndex = 0;
+  //   const videoInfo = await FileSystem.getInfoAsync(video.uri, { size: true });
+  //   const totalParts = Math.ceil(videoInfo.size / (1024 * 1024 * 10));
+
+  //   for await (const chunk of readFileInChunks(video.uri)) {
+  //     const formData = new FormData();
+  //     // chunk를 data URI 형식으로 넣기
+  //     // formData.append("file", {
+  //     //   uri: `data:${video.type};base64,${chunk}`,
+  //     //   name: `${video.name}.part${chunkIndex}`,
+  //     //   type: video.type,
+  //     // });
+  //     formData.append("file", chunk);
+  //     formData.append("presignedToken", JSON.stringify(presignedUrl));
+  //     formData.append("chunkIndex", chunkIndex.toString());
+  //     formData.append("totalParts", totalParts.toString());
+  //     formData.append("fileName", videoName.toString());
+
+  //     console.log("python으로 보내는 formData:", formData);
+  //     try {
+  //       // Axios로 전송
+  //       const response = await api.post(
+  //         "http://tkv00.ddns.net:8000/api/presigned/chunk",
+  //         formData,
+  //         {
+  //           headers: {
+  //             "Content-Type": "multipart/form-data",
+  //           },
+  //         }
+  //       );
+
+  //       if (response.status === 200) {
+  //         console.log(`Chunk ${chunkIndex + 1}/${totalParts} 업로드 완료!!`);
+  //       } else {
+  //         console.error(`Chunk ${chunkIndex} 서버 오류`, response.status);
+  //         break;
+  //       }
+  //     } catch (err) {
+  //       console.error(`Chunk ${chunkIndex} 업로드 실패 ㅜ`, err);
+  //       break;
+  //     }
+  //     chunkIndex++;
+  //   }
+  //   console.log("모든 청크 업로드 완료, complete실행");
+  //   const data = {
+  //     presignedToken : JSON.stringify(presignedUrl),
+  //     totalParts : totalParts.toString()
+  //   }
+  //   try{
+  //     const complete = await api.post("파이썬 주소~~~",  
+  //       qs.stringify(data),
+  //       {
+  //         headers: {
+  //           "Content-Type": "application/x-www-form-urlencoded",
+  //         },
+  //       }
+  //     )
+  //     if(complete.status === 200){
+  //       return {status : 200}
+  //     }
+  //   } catch(error) {
+  //     console.log("complete 에러:", error)
+  //   }
+  // };
+  const chunkSize = 10 * 1024 * 1024;
+  let chunkIndex = 0;
   const uploadVideoToPython = async (presignedUrl, video) => {
-    if (!video || !presignedUrl) return;
-    console.log("비디오 업로드 시작...");
-    let chunkIndex = 0;
-    const videoInfo = await FileSystem.getInfoAsync(video.uri, { size: true });
-    const totalParts = Math.ceil(videoInfo.size / (1024 * 1024 * 10));
+      if (!video || !presignedUrl) return;
+      console.log("비디오 업로드 시작...");
 
-    for await (const chunk of readFileInChunks(video.uri)) {
-      const formData = new FormData();
-      // chunk를 data URI 형식으로 넣기
-      // formData.append("file", {
-      //   uri: `data:${video.type};base64,${chunk}`,
-      //   name: `${video.name}.part${chunkIndex}`,
-      //   type: video.type,
-      // });
-      formData.append("file", chunk);
-      formData.append("presignedToken", JSON.stringify(presignedUrl));
-      formData.append("chunkIndex", chunkIndex.toString());
-      formData.append("totalParts", totalParts.toString());
-      formData.append("fileName", videoName.toString());
+      const response = await fetch(video.uri);
+      const fileBlob = await response.blob();
+      const totalParts = Math.ceil(fileBlob.size / chunkSize);
 
-      console.log("python으로 보내는 formData:", formData);
-      try {
-        // Axios로 전송
-        const response = await api.post(
-          "http://tkv00.ddns.net:8000/api/presigned/chunk",
-          formData,
+      let offset = 0;
+      while (offset < fileBlob.size) {
+        const end = Math.min(offset + chunkSize, fileBlob.size);
+        const chunk = fileBlob.slice(offset, end); 
+
+        const formData = new FormData();
+        formData.append('file', chunk, `${videoName}.part${chunkIndex}`);
+        formData.append('presignedToken', JSON.stringify(presignedUrl));
+        formData.append('chunkIndex', chunkIndex.toString());
+        formData.append('totalParts', totalParts.toString());
+        formData.append('fileName', videoName);
+
+
+        await fetch('http://tkv00.ddns.net:8000/api/presigned/chunk,', {
+          method: 'POST',
+          body: formData,
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        });
+
+        offset += chunkSize;
+        chunkIndex++;
+      }
+      
+      console.log("모든 청크 업로드 완료, complete실행");
+      const data = {
+        presignedToken : JSON.stringify(presignedUrl),
+        totalParts : totalParts.toString()
+      }
+      try{
+        const complete = await api.post("파이썬 주소~~~",  
+          qs.stringify(data),
           {
             headers: {
-              "Content-Type": "multipart/form-data",
+              "Content-Type": "application/x-www-form-urlencoded",
             },
           }
-        );
-
-        if (response.status === 200) {
-          console.log(`Chunk ${chunkIndex + 1}/${totalParts} 업로드 완료!!`);
-        } else {
-          console.error(`Chunk ${chunkIndex} 서버 오류`, response.status);
-          break;
+        )
+        if(complete.status === 200){
+          return {status : 200}
         }
-      } catch (err) {
-        console.error(`Chunk ${chunkIndex} 업로드 실패 ㅜ`, err);
-        break;
+      } catch(error) {
+        console.log("complete 에러:", error)
       }
-
-      chunkIndex++;
-    }
-  };
+  }
 
   //비디오 업로드 함수
   const handleVideoUpload = async () => {
@@ -185,10 +260,8 @@ const FrontendUpload = ({ jerseyNumber, frontImage }) => {
       sse.onmessage = (e) => console.log("SSE 메시지:", e.data);
 
       // 파이썬 서버로 업로드, 전송 데이터는 얘기 맞춰봐야할듯
-      const uploadPromise = uploadVideoToPython(presignedUrl, videoFile);
+      const response = await uploadVideoToPython(presignedUrl, videoFile);
 
-      // 업로드 완료까지 기다림
-      const response = await uploadPromise;
       console.log("업로드 완료:", response);
 
       if (response.status === 200) {
