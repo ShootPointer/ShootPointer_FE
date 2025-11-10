@@ -1,4 +1,5 @@
-import * as FileSystem from "expo-file-system/legacy";
+import axios from "axios";
+import * as FileSystem from "expo-file-system";
 import * as ImagePicker from "expo-image-picker";
 import { useState } from "react";
 import {
@@ -179,14 +180,39 @@ const FrontendUpload = ({ jerseyNumber, frontImage }) => {
   //     console.log("complete 에러:", error)
   //   }
   // };
+
+  async function getFileBlob(fileUri) {
+    const base64Data = await FileSystem.readAsStringAsync(fileUri, {
+      encoding: FileSystem.EncodingType.Base64,
+    });
+
+    const byteCharacters = atob(base64Data);
+    const byteArrays = [];
+
+    const chunkSize = 1024;
+    for (let offset = 0; offset < byteCharacters.length; offset += chunkSize) {
+      const slice = byteCharacters.slice(offset, offset + chunkSize);
+      const byteNumbers = new Array(slice.length);
+      for (let i = 0; i < slice.length; i++) {
+        byteNumbers[i] = slice.charCodeAt(i);
+      }
+      const byteArray = new Uint8Array(byteNumbers);
+      byteArrays.push(byteArray);
+    }
+
+    const blob = new Blob(byteArrays, { type: "video/mp4" });
+    return blob;
+  }
   const chunkSize = 10 * 1024 * 1024;
-  let chunkIndex = 0;
+
   const uploadVideoToPython = async (presignedUrl, video) => {
       if (!video || !presignedUrl) return;
       console.log("비디오 업로드 시작...");
 
-      const response = await fetch(video.uri);
-      const fileBlob = await response.blob();
+      let chunkIndex = 0;
+      // const response = await fetch(video.uri);
+      // const fileBlob = await response.blob();
+      const fileBlob = await getFileBlob(video.uri);
       const totalParts = Math.ceil(fileBlob.size / chunkSize);
 
       let offset = 0;
@@ -202,12 +228,12 @@ const FrontendUpload = ({ jerseyNumber, frontImage }) => {
         formData.append('fileName', videoName);
 
 
-        await fetch('http://tkv00.ddns.net:8000/api/presigned/chunk,', {
+        await fetch('http://tkv0011.ddns.net:8000/chunk', {
           method: 'POST',
           body: formData,
-          headers: {
-            'Content-Type': 'multipart/form-data',
-          },
+          // headers: {
+          //   'Content-Type': 'multipart/form-data',
+          // },
         });
 
         offset += chunkSize;
@@ -220,7 +246,7 @@ const FrontendUpload = ({ jerseyNumber, frontImage }) => {
         totalParts : totalParts.toString()
       }
       try{
-        const complete = await api.post("파이썬 주소~~~",  
+        const complete = await axios.post("http://tkv0011.ddns.net:8000/complete",  
           qs.stringify(data),
           {
             headers: {
