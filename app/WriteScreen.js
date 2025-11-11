@@ -91,19 +91,13 @@ export default function WriteScreen() {
           </View>
 
           {/* 하이라이트 이미지 */}
-          {highlight ? (
-            <Image
-              source={{ uri: highlight.thumbnailUrl || highlight.highlightUrl }}
-              style={styles.image}
-            />
-          ) : (
             <TouchableOpacity
               style={styles.selectButton}
               onPress={() => router.push("/HighlightScreen")}
             >
               <Text style={styles.buttonText}>하이라이트 선택하기</Text>
             </TouchableOpacity>
-          )}
+          
 
           {/* 제목 */}
           <TextInput
@@ -222,6 +216,7 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     borderRadius: 10,
     alignItems: "center",
+    marginBottom:50,
   },
   postButtonText: { color: "#fff", fontWeight: "bold", fontSize: 16 },
 });

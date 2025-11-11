@@ -11,17 +11,17 @@ export default function MyPointerScreen() {
   useEffect(() => {
     const fetchUser = async () => {
       try {
-        const response = await api.get("/kakao/me");
-        console.log("✅ GET /kakao/me 성공:", response.data);
+        const response = await api.get("/member/me");
+        console.log("✅ GET /member/me 성공:", response.data);
 
-        const data = response.data; // example: { memberId, email, username }
+        const data = response.data.data; // example: { memberId, email, username }
         setUser({
           username: data.username,
           email: data.email,
           profileImage: "https://picsum.photos/200", // 필요시 프로필 이미지 API로 교체
         });
       } catch (err) {
-        console.error("❌ GET /kakao/me 실패:", err);
+        console.error("❌ GET /member/me 실패:", err);
       } finally {
         setLoading(false);
       }

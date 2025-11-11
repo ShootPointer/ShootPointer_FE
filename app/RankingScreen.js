@@ -10,6 +10,7 @@ import {
   Alert,
 } from "react-native";
 import api from "./api/api"; 
+import { Stack } from "expo-router";
 
 const RankingScreen = () => {
   const [rankData, setRankData] = useState([]);
@@ -24,8 +25,6 @@ const RankingScreen = () => {
   const fetchRanking = async (type) => {
     setLoading(true);
     try {
-      const today = new Date().toISOString().split("T")[0];
-      console.log("📅 요청 날짜:", today);
 
       const url =
         type === "weekly"
@@ -80,6 +79,15 @@ const RankingScreen = () => {
 
   return (
     <View style={styles.container}>
+      <Stack.Screen options={{ headerShown: false }} />
+              <View style={styles.header}>
+                <TouchableOpacity onPress={() => router.back()}>
+                  <Image source={require('../assets/images/back.png')} style={styles.backIcon} />
+                </TouchableOpacity>
+                <Text style={styles.headerTitle}>설정</Text>
+                <View style={{ width: 28 }} />
+              </View>
+      
       <Text style={styles.title}>득점 랭킹</Text>
       <Text style={styles.subtitle}>주간 / 월간 슈터들을 확인해 보세요!</Text>
 

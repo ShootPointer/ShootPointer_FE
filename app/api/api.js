@@ -122,3 +122,15 @@ export const getPostById = async (postId) => {
 }
 
 };
+// ✅ 게시물 작성 API
+export const createPost = async (highlightId, title, content, hashTag) => {
+  const body = {
+    highlightId,
+    title,
+    content,
+    hashTag,
+  };
+
+  const res = await api.post("/api/post", body); // ✅ 서버 엔드포인트에 맞게 POST 요청
+  return res.data;
+};

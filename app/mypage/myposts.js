@@ -124,28 +124,37 @@ export default function MyPostsScreen() {
     });
   };
 
-  // ✅ 삭제 (API 나중에 연결)
   const handleDelete = async () => {
-    if (!selectedPost) return;
-    closeModal();
-    Alert.alert("삭제 확인", "정말 이 게시물을 삭제하시겠습니까?", [
-      { text: "취소", style: "cancel" },
-      {
-        text: "삭제",
-        style: "destructive",
-        onPress: async () => {
-          try {
+  if (!selectedPost) return;
+  closeModal();
+
+  Alert.alert("삭제 확인", "정말 이 게시물을 삭제하시겠습니까?", [
+    { text: "취소", style: "cancel" },
+    {
+      text: "삭제",
+      style: "destructive",
+      onPress: async () => {
+        try {
+          // 🔹 서버에 삭제 요청 (DELETE 메서드)
+          const response = await api.delete(`/api/post/${selectedPost.postId}`);
+
+          if (response.status === 200) {
+            // UI에서도 삭제
             setPosts((prev) =>
               prev.filter((p) => p.postId !== selectedPost.postId)
             );
             Alert.alert("삭제 완료", "게시물이 삭제되었습니다.");
-          } catch (e) {
-            Alert.alert("삭제 실패", "다시 시도해주세요.");
+          } else {
+            Alert.alert("삭제 실패", "서버 응답이 올바르지 않습니다.");
           }
-        },
+        } catch (e) {
+          console.error("삭제 실패:", e);
+          Alert.alert("삭제 실패", "서버와 통신 중 오류가 발생했습니다.");
+        }
       },
-    ]);
-  };
+    },
+  ]);
+};
 
   // ✅ 게시물 렌더링
   const renderItem = ({ item }) => (
