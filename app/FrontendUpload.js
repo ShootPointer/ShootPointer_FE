@@ -36,7 +36,6 @@ const FrontendUpload = ({ jerseyNumber, frontImage }) => {
     });
 
     if (!result.canceled) {
-      // 로그 찍으면서 값이 들어가는지 확인 ㄱㄱ -> ok
       const videoAsset = result.assets[0];
       setVideoName(videoAsset.fileName || videoAsset.uri.split("/").pop());
       setVideoSize(
@@ -44,27 +43,21 @@ const FrontendUpload = ({ jerseyNumber, frontImage }) => {
           (await FileSystem.getInfoAsync(videoAsset.uri)).size
       );
       setVideoFile(videoAsset);
+      setVideoSetting(false);
     }
-    console.log("선택된 비디오:", videoFile);
-    console.log("비디오 이름:", videoName);
-    console.log("비디오 크기:", videoSize);
-    setVideoSetting(false);
   };
 
   //pre-signed 발급 함수
   const getPresignedUrlFromServer = async () => {
     console.log("Presigned URL 요청 중...");
     try {
-      console.log("비디오 이름:", videoName);
-      console.log("비디오 크기:", videoSize);
-
       const response = await api.post("https://tkv00.ddns.net/api/pre-signed", {
         fileName: videoName,
         fileSize: videoSize,
       });
       if (response.status === 200) {
         console.log("Presigned URL 받음:", response.data.data.presignedUrl);
-        return response.data.data.presignedUrl;
+        return response.data.data.signature;
       }
     } catch (error) {
       console.error("Presigned URL 요청 실패:", error);
@@ -73,6 +66,7 @@ const FrontendUpload = ({ jerseyNumber, frontImage }) => {
   };
 
   const chunkSize = 5 * 1024 * 1024;
+
   // 파일 청크단위로 읽는 비동기 제너레이터
   async function* readFileInChunks(fileUri) {
     console.log("전체 파일 Base64 읽는 중...");
@@ -82,59 +76,107 @@ const FrontendUpload = ({ jerseyNumber, frontImage }) => {
     console.log("전체 Base64 읽기 완료:", base64.length, "bytes");
     let offset = 0;
     while (offset < base64.length) {
-      const chunk = base64.slice(offset, offset + chunkSize);
-      // console.log("chunk:", chunk);
-      console.log(`청크 생성: ${offset} ~ ${offset + chunkSize}`);
+      let chunk = base64.slice(offset, offset + chunkSize);
+      // 마지막 청크 padding 보정
+      const pad = 4 - (chunk.length % 4);
+      if (pad < 4) chunk += "=".repeat(pad);
       yield chunk;
       offset += chunkSize;
     }
   }
 
-  // 영상 파이썬 서버로 전송하는 함스
+  // 영상 파이썬 서버로 전송하는 함수
   const uploadVideoToPython = async (presignedUrl, video) => {
     if (!video || !presignedUrl) return;
     console.log("비디오 업로드 시작...");
 
-    let chunkIndex = 1;
-    const videoInfo = await FileSystem.getInfoAsync(video.uri, { size: true });
-    const totalParts = Math.ceil(videoInfo.size / (1024 * 1024 * 5));
-
+    // 청크를 먼저 배열로 읽기
+    const chunks = [];
     for await (const chunk of readFileInChunks(video.uri)) {
-      console.log("업로드할 청크 길이:", chunk.length);
-      const formData = new FormData();
-      // chunk를 data URI 형식으로 넣기
+      chunks.push(chunk);
+    }
 
-      // formData.append("presignedToken", JSON.stringify(presignedUrl));
+    const totalParts = chunks.length;
+    console.log(`총 ${totalParts}개 청크 생성됨`);
+
+    // 각 청크 업로드
+    for (let chunkIndex = 1; chunkIndex <= totalParts; chunkIndex++) {
+      const chunk = chunks[chunkIndex - 1];
+
+      console.log(`업로드 중: ${chunkIndex}/${totalParts}`);
+      const formData = new FormData();
       formData.append("presignedToken", presignedUrl);
       formData.append("chunkIndex", chunkIndex.toString());
       formData.append("totalParts", totalParts.toString());
       formData.append("fileName", videoName);
-      console.log("python으로 보내는 formData:", formData);
       formData.append("file", chunk);
-      // console.log("python으로 보내는 formData:", formData);
+
       try {
-        // Axios로 전송
         const response = await fetch("http://tkv0011.ddns.net:8000/chunk", {
           method: "POST",
-
           body: formData,
         });
-        console.log("서버 응답:", response);
+
         if (response.ok) {
-          console.log(`Chunk ${chunkIndex} 업로드 완료 !`);
+          console.log(`Chunk ${chunkIndex}/${totalParts} 업로드 완료!`);
         } else {
-          console.error(`Chunk ${chunkIndex} 서버 오류: `, response.status);
-          break;
+          const errorText = await response.text();
+          console.error(
+            `Chunk ${chunkIndex} 오류:`,
+            response.status,
+            errorText
+          );
+          throw new Error(`Chunk ${chunkIndex} 업로드 실패`);
         }
       } catch (err) {
-        console.error("업로드 실패", err);
-        return { status: "error", message: err.message };
+        console.error(`Chunk ${chunkIndex} 실패:`, err);
+        throw err;
       }
-      chunkIndex++;
+    }
+
+    // 🔥 모든 청크 업로드 완료 후 병합 요청
+    console.log("모든 청크 업로드 완료, 병합 요청 중...");
+    return await completeUpload(presignedUrl, totalParts);
+  };
+
+  // 🆕 청크 업로드 완료 및 병합 트리거 API
+  const completeUpload = async (presignedToken, totalParts) => {
+    try {
+      // application/x-www-form-urlencoded 형식으로 데이터 준비
+      const params = new URLSearchParams();
+      params.append("presignedToken", presignedToken);
+      params.append("totalParts", totalParts.toString());
+      // params.append("fileName", videoName); // 선택적 파라미터
+
+      console.log("Complete API 호출:", {
+        presignedToken,
+        totalParts,
+      });
+
+      const response = await fetch("http://tkv0011.ddns.net:8000/complete", {
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded", // ✅ 반드시 추가!
+        },
+        method: "POST",
+        body: params.toString(),
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        console.log("✅ 병합 완료:", result);
+        return { status: "success", data: result };
+      } else {
+        const errorText = await response.text();
+        console.error("❌ 병합 요청 실패:", response.status, errorText);
+        return { status: "error", message: errorText };
+      }
+    } catch (err) {
+      console.error("❌ 병합 요청 중 오류:", err);
+      return { status: "error", message: err.message };
     }
   };
 
-  //비디오 업로드 함수
+  // 비디오 업로드 함수
   const handleVideoUpload = async () => {
     setVideoUpload(true);
     if (!videoFile) {
@@ -153,21 +195,21 @@ const FrontendUpload = ({ jerseyNumber, frontImage }) => {
         return;
       }
 
-      // SSE 연결 => 리액트 네이티브에서 되는지 확인필요 합니다잉
-      // const sse = new RNEventSource("https://tkv00.ddns.net/api/events");
-
-      // sse.addEventListener("message", (event) => {
-      //   console.log("서버 메시지:", event.data);
-      // });
-
-      // 파이썬 서버로 업로드, 전송 데이터는 얘기 맞춰봐야할듯
+      // 파이썬 서버로 업로드 (청크 전송 + 병합 완료)
       const response = await uploadVideoToPython(presignedUrl, videoFile);
+
       if (response && response.status === "error") {
         Alert.alert("업로드 실패", response.message || "오류 발생");
+      } else if (response && response.status === "success") {
+        Alert.alert("업로드 완료", "비디오 처리가 시작되었습니다!");
+        console.log("서버 응답:", response.data);
       }
     } catch (error) {
       console.error("비디오 업로드 실패:", error);
-      Alert.alert("업로드 실패", "비디오 업로드 중 오류발생ㅜ");
+      Alert.alert(
+        "업로드 실패",
+        error.message || "비디오 업로드 중 오류발생ㅜ"
+      );
     } finally {
       setVideoUpload(false);
     }
@@ -178,18 +220,6 @@ const FrontendUpload = ({ jerseyNumber, frontImage }) => {
 
     try {
       const formData = new FormData();
-
-      // if (Platform.OS === "web") {
-      //   const response = await fetch(videoFile.uri);
-      //   const blob = await response.blob();
-      //   formData.append("video", blob, "video.mp4");
-      // } else {
-      //   formData.append("video", {
-      //     uri: videoFile.uri,
-      //     name: "video.mp4",
-      //     type: "video/mp4",
-      //   });
-      // }
 
       const img = {
         uri: frontImage.uri,
@@ -222,13 +252,15 @@ const FrontendUpload = ({ jerseyNumber, frontImage }) => {
         console.log("번호, 등 사진 업로드 성공");
         setVideoOk(true);
       } else {
-        console.log(res.data);
-        Alert.alert("업로드 실패" || "오류 발생");
+        const errorMsg =
+          res.data?.error?.message || "업로드 실패 (서버 응답 없음)";
+        console.log("서버 응답 오류:", res.data);
+        Alert.alert(errorMsg);
       }
     } catch (error) {
       console.error("❌ 오류:", error);
       console.log("catch문 안");
-      Alert.alert("업로드 실패", error || "오류 발생");
+      Alert.alert(error.message || "업로드 실패");
     } finally {
       setIsUploading(false);
     }
@@ -263,7 +295,7 @@ const FrontendUpload = ({ jerseyNumber, frontImage }) => {
           <TouchableOpacity
             style={[
               {
-                backgroundColor: videoSetting ? "#555" : "#ff6a33", // 비활성화시 어두운 회색, 활성화시 주황색
+                backgroundColor: videoSetting ? "#555" : "#ff6a33",
                 paddingVertical: 12,
                 borderRadius: 8,
                 alignItems: "center",
@@ -284,13 +316,6 @@ const FrontendUpload = ({ jerseyNumber, frontImage }) => {
           </TouchableOpacity>
         </View>
       )}
-
-      {/* {uploadResult && (
-        <View style={{ marginTop: 20 }}>
-          <Text>서버 응답:</Text>
-          <Text>{uploadResult}</Text>
-        </View>
-      )} */}
     </View>
   );
 };
