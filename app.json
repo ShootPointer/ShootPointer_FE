@@ -28,6 +28,25 @@
     "plugins": [
       "expo-router",
       [
+        "expo-build-properties",
+        {
+          "android": {
+            "metaData": [
+              {
+                "name": "com.google.firebase.messaging.default_notification_color",
+                "value": "@color/notification_icon_color",
+                "tools:replace": "android:resource"
+              },
+              {
+                "name": "com.google.firebase.messaging.default_notification_icon",
+                "value": "@drawable/notification_icon",
+                "tools:replace": "android:resource"
+              }
+            ]
+          }
+        }
+      ],
+      [
         "expo-splash-screen",
         {
           "image": "./assets/images/splash-icon.png",
@@ -42,12 +61,12 @@
       [
         "expo-notifications",
         {
-          "icon": "./assets/images/notification-icon.png",
-          "color": "#ff6a33"
+          "icon": "./assets/images/notification-icon.png"
         }
       ],
       "@react-native-firebase/app"
     ],
+    
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
