@@ -14,6 +14,7 @@ import {
 
 export default function HomeScreen() {
   const [highlights, setHighlights] = useState([]);
+  const [user, setUser] = useState(null);
   const router = useRouter();
 
   // useEffect(() => {
@@ -50,6 +51,22 @@ export default function HomeScreen() {
 
   //   init();
   // }, []);
+
+  // useEffect(() => {
+  //   fetchUserInfo();
+  // }, []);
+
+  // const fetchUserInfo = async () => {
+  //   try {
+  //     const response = await api.get("https://tkv00.ddns.net/kakao/me");
+  //     console.log("유저 정보:", response.data);
+  //     if (response.status === 200) {
+  //       setUser(response.data);
+  //     }
+  //   } catch (error) {
+  //     console.error("유저 정보 조회 실패:", error);
+  //   }
+  // };
 
   const renderHighlight = ({ item }) => (
     <View style={styles.card}>
@@ -88,7 +105,7 @@ export default function HomeScreen() {
       <View style={styles.bottomArea}>
         <View style={styles.infoCard}>
           <Text style={styles.infoTitle}>내 정보</Text>
-          <Text style={styles.infoContent}>홍길동님, 환영합니다!</Text>
+          <Text style={styles.infoContent}>님, 환영합니다!</Text>
           <Text style={styles.infoContent}>등번호: 23</Text>
           <Text style={styles.infoContent}>포지션: 가드</Text>
         </View>

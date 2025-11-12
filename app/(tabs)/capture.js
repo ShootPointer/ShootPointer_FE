@@ -33,7 +33,8 @@ export default function CaptureScreen() {
   const handleCapture = async () => {
     if (cameraRef.current) {
       const photo = await cameraRef.current.takePictureAsync();
-      setFrontImage(photo.uri);
+      console.log("photo", photo);
+      setFrontImage(photo);
       setStep("upload");
     }
   };
