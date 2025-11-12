@@ -5,58 +5,47 @@ import { useRouter } from "expo-router";
 import React, { useState, useEffect } from "react";
 import { Dimensions, FlatList, Image, Text, TouchableOpacity, View, ActivityIndicator } from "react-native";
 import api from "../api/api";
-
+import AsyncStorage from "@react-native-async-storage/async-storage";
 export default function HomeScreen() {
   const [highlights, setHighlights] = useState([]);
   const [userInfo, setUserInfo] = useState(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
-  useEffect(() => {
-    const fetchUserInfo = async () => {
-      try {
-        const response = await api.get("/member/me");
-        const data = response.data.data;
-        setUserInfo({
-          username: data.username,
-          backNumber: data.backNumber,
-          highlightCount: data.highlightCount,
-          totalThreePoint: data.totalThreePoint,
-          totalTwoPoint: data.totalTwoPoint,
-        });
+useEffect(() => {
+  const fetchUserInfo = async () => {
+    try {
+      const token = await AsyncStorage.getItem("accessToken");
+      if (!token) return; // 토큰 없으면 API 요청하지 않음
 
-const dummyHighlights = [
-  {
-    id: "1",
-    title: "경기 하이라이트 1",
-    type: "video",
-    media: "https://www.w3schools.com/html/mov_bbb.mp4", // 테스트용 mp4
-  },
-  {
-    id: "2",
-    title: "경기 하이라이트 2",
-    type: "video",
-    media: "https://www.w3schools.com/html/mov_bbb.mp4", // 테스트용 mp4
-  },
-  {
-    id: "3",
-    title: "경기 하이라이트 3",
-    type: "video",
-    media: "https://www.w3schools.com/html/mov_bbb.mp4", // 테스트용 mp4
-  },
-];
+      const response = await api.get("/member/me", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = response.data.data;
 
+      setUserInfo({
+        username: data.username,
+        backNumber: data.backNumber,
+        highlightCount: data.highlightCount,
+        totalThreePoint: data.totalThreePoint,
+        totalTwoPoint: data.totalTwoPoint,
+      });
 
-        setHighlights(dummyHighlights);
-      } catch (err) {
-        console.error("데이터 로드 실패:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
+      const dummyHighlights = [
+        { id: "1", title: "경기 하이라이트 1", type: "video", media: "https://www.w3schools.com/html/mov_bbb.mp4" },
+        { id: "2", title: "경기 하이라이트 2", type: "video", media: "https://www.w3schools.com/html/mov_bbb.mp4" },
+        { id: "3", title: "경기 하이라이트 3", type: "video", media: "https://www.w3schools.com/html/mov_bbb.mp4" },
+      ];
+      setHighlights(dummyHighlights);
+    } catch (err) {
+      console.error("데이터 로드 실패:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    fetchUserInfo();
-  }, []);
+  fetchUserInfo();
+}, []);
 
 const renderHighlight = ({ item }) => (
   <View style={styles.highlightCard}>

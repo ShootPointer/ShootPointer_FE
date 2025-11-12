@@ -8,7 +8,7 @@ import {
   Image,
   StyleSheet,
 } from "react-native";
-import { useRouter } from "expo-router";
+import { useRouter,Stack } from "expo-router";
 import api from "./api/api"; // axios 인스턴스
 
 export default function HighlightScreen() {
