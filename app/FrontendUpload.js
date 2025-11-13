@@ -250,7 +250,7 @@ const FrontendUpload = ({ jerseyNumber, frontImage }) => {
 
       if (res.status === 200 && res.data.success === true) {
         console.log(res.data);
-        console.log("번호, 등 사진 업로드 성공");
+        Alert.alert("번호, 등 사진 업로드 성공");
         setVideoOk(true);
       } else {
         const errorMsg =
