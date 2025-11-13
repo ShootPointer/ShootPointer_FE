@@ -142,6 +142,7 @@ export default function CaptureScreen() {
   );
 }
 
+// 스타일 수정 (등번호 촬영 step 관련 부분 중심)
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#111", padding: 20 },
   topLabel: { position: "absolute", top: 120, left: 20 },
@@ -169,45 +170,57 @@ const styles = StyleSheet.create({
   buttonContainer: { justifyContent: "flex-end", flex: 1 },
   captureButton: {
     paddingVertical: 15,
-    borderRadius: 10,
+    borderRadius: 12,
     alignItems: "center",
     marginBottom: 20,
+    backgroundColor: "#ff6a33",
+    shadowColor: "#ff6a33",
+    shadowOpacity: 0.5,
+    shadowOffset: { width: 0, height: 5 },
+    shadowRadius: 10,
+    elevation: 5,
+    alignSelf: "center",
+    width:"90%",
   },
-  buttonText: { color: "white", fontSize: 18 },
+  buttonText: { color: "white", fontSize: 18, fontWeight: "600" },
+
+  // ====== 촬영 화면 관련 스타일 ======
   overlay: {
     position: "absolute",
-    top: 40,
+    top: 0,
     left: 0,
     right: 0,
     bottom: 0,
-    alignItems: "center",
     justifyContent: "space-between",
-    paddingVertical: 40,
+    alignItems: "center",
+    paddingVertical: 60,
+    backgroundColor: "rgba(0,0,0,0.25)", // 부드러운 반투명 오버레이
   },
   cameraLabel: {
     color: "white",
-    fontSize: 18,
+    fontSize: 20,
     textAlign: "center",
-    backgroundColor: "rgba(0,0,0,0.4)",
-    paddingHorizontal: 15,
-    paddingVertical: 8,
-    borderRadius: 8,
-    width: 300,
+    backgroundColor: "rgba(0,0,0,0.6)",
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 12,
+    fontWeight: "500",
   },
   circleButton: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    borderWidth: 4,
-    borderColor: "white",
+    width: 90,
+    height: 90,
+    borderRadius: 45,
+    borderWidth: 5,
+    borderColor: "#ff6a33",
     justifyContent: "center",
     alignItems: "center",
-    marginBottom: 20,
+    marginBottom: 30,
+    backgroundColor: "rgba(255, 106, 51,0.2)",
   },
   innerCircle: {
     width: 60,
     height: 60,
     borderRadius: 30,
-    backgroundColor: "white",
+    backgroundColor: "#ff6a33",
   },
 });

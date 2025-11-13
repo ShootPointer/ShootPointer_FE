@@ -8,7 +8,7 @@ import {
   Image,
   StyleSheet,
 } from "react-native";
-import { useRouter } from "expo-router";
+import { useRouter,Stack } from "expo-router";
 import api from "./api/api"; // axios 인스턴스
 
 export default function HighlightScreen() {
@@ -48,7 +48,18 @@ export default function HighlightScreen() {
   }
 
   return (
+    
     <View style={styles.container}>
+      
+            <Stack.Screen options={{ headerShown: false }} />
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => router.back()}>
+            <Image source={require('../assets/images/back.png')} style={styles.backIcon} />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>설정</Text>
+          <View style={{ width: 28 }} />
+        </View>
+
       <Text style={styles.header}>하이라이트 내역</Text>
       <FlatList
         data={highlights}

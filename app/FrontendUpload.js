@@ -8,6 +8,7 @@ import {
   Text,
   TouchableOpacity,
   View,
+  StyleSheet
 } from "react-native";
 import api from "./api/api";
 
@@ -269,55 +270,95 @@ const FrontendUpload = ({ jerseyNumber, frontImage }) => {
   return (
     <View style={{ padding: 20 }}>
       {!videoOk && (
-        <>
-          <Text style={{ fontSize: 18, marginBottom: 10 }}>
-            등번호: {jerseyNumber}
-          </Text>
-          {frontImage && (
-            <Image
-              source={{ uri: frontImage.uri }}
-              style={{ width: 330, height: 500, marginBottom: 10 }}
-            />
-          )}
+  <>
+    <Text style={{ fontSize: 18, marginBottom: 10 }}>
+      등번호: {jerseyNumber}
+    </Text>
+    {frontImage && (
+      <Image
+        source={{ uri: frontImage }}
+        style={{ width: 330, height: 500, marginBottom: 10 }}
+      />
+    )}
 
-          <View style={{ height: 10 }} />
-          <Button
-            title={isUploading ? "업로드 중..." : "업로드"}
-            onPress={handleUpload}
-            disabled={isUploading}
-          />
-        </>
-      )}
-      {videoOk && (
+    <View style={{ height: 10 }} />
+    <TouchableOpacity
+      style={[
+        styles.uploadButton,
+        isUploading && styles.disabledButton
+      ]}
+      onPress={handleUpload}
+      disabled={isUploading}
+    >
+      <Text style={styles.uploadButtonText}>
+        {isUploading ? "업로드 중..." : "업로드"}
+      </Text>
+    </TouchableOpacity>
+  </>
+)}
+
+{videoOk && (
+  <View style={{ marginTop: 20 }}>
+    <TouchableOpacity style={styles.videoPickButton} onPress={pickVideo}>
+      <Text style={styles.videoPickButtonText}>영상 선택</Text>
+    </TouchableOpacity>
+
+    <View style={{ height: 10 }} />
+    <TouchableOpacity
+      style={[
+        styles.uploadButton,
+        videoSetting && styles.disabledButton
+      ]}
+      disabled={videoSetting}
+      onPress={handleVideoUpload}
+    >
+      <Text style={styles.uploadButtonText}>
+        {videoUpload ? "업로드 중..." : "업로드"}
+      </Text>
+    </TouchableOpacity>
+  </View>
+)}
+
+      {/* {uploadResult && (
         <View style={{ marginTop: 20 }}>
-          <Button title="🎥 영상 선택" onPress={pickVideo} />
-          <View style={{ height: 10 }} />
-          <TouchableOpacity
-            style={[
-              {
-                backgroundColor: videoSetting ? "#555" : "#ff6a33",
-                paddingVertical: 12,
-                borderRadius: 8,
-                alignItems: "center",
-              },
-            ]}
-            disabled={videoSetting}
-            onPress={handleVideoUpload}
-          >
-            <Text
-              style={{
-                color: "white",
-                fontSize: 16,
-                fontWeight: "bold",
-              }}
-            >
-              {videoUpload ? "업로드 중..." : "업로드"}
-            </Text>
-          </TouchableOpacity>
+          <Text>서버 응답:</Text>
+          <Text>{uploadResult}</Text>
         </View>
-      )}
+      )} */}
     </View>
   );
 };
+
+const styles = StyleSheet.create({
+  uploadButton: {
+    backgroundColor: "#ff6a33",
+    paddingVertical: 15,
+    paddingHorizontal: 40,
+    borderRadius: 12,
+    alignItems: "center",
+    marginVertical: 10,
+    shadowColor: "#ff6a33",
+    shadowOpacity: 0.4,
+    shadowOffset: { width: 0, height: 5 },
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  uploadButtonText: { color: "white", fontSize: 16, fontWeight: "600" },
+  disabledButton: { backgroundColor: "#555" },
+  videoPickButton: {
+    backgroundColor: "#3498db",
+    paddingVertical: 14,
+    paddingHorizontal: 40,
+    borderRadius: 12,
+    alignItems: "center",
+    marginBottom: 10,
+    shadowColor: "#3498db",
+    shadowOpacity: 0.4,
+    shadowOffset: { width: 0, height: 5 },
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  videoPickButtonText: { color: "white", fontSize: 16, fontWeight: "600" },
+});
 
 export default FrontendUpload;

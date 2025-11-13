@@ -57,7 +57,9 @@ export default function KakaoWebViewLogin() {
       ]);
 
       setLoginFinished(true); // WebView 언마운트
+      
       router.replace("/"); // 홈 화면으로 이동
+      
     } catch (error) {
       console.error("❌ 토큰 요청 에러:", error);
       Alert.alert("로그인 실패", error.message || "토큰 요청에 실패했습니다.");

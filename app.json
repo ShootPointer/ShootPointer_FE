@@ -14,12 +14,11 @@
     "android": {
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
-        "foregroundImage": "./assets/images/android-icon-foreground.png",
-        "backgroundImage": "./assets/images/android-icon-background.png",
-        "monochromeImage": "./assets/images/android-icon-monochrome.png"
+        "foregroundImage": "./assets/images/android-icon-foreground.png"
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
+      "googleServicesFile": "./google-services.json",
       "package": "com.znao.finalapp"
     },
     "web": {
@@ -28,6 +27,25 @@
     },
     "plugins": [
       "expo-router",
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "metaData": [
+              {
+                "name": "com.google.firebase.messaging.default_notification_color",
+                "value": "@color/notification_icon_color",
+                "tools:replace": "android:resource"
+              },
+              {
+                "name": "com.google.firebase.messaging.default_notification_icon",
+                "value": "@drawable/notification_icon",
+                "tools:replace": "android:resource"
+              }
+            ]
+          }
+        }
+      ],
       [
         "expo-splash-screen",
         {
@@ -39,11 +57,25 @@
             "backgroundColor": "#000000"
           }
         }
-      ]
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/images/notification-icon.png"
+        }
+      ],
+      "@react-native-firebase/app"
     ],
+    
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "75de459d-90ff-4396-afce-5cca3fa79788"
+      }
     }
   }
 }

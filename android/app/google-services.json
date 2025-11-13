@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "656177304579",
+    "project_id": "shootpointer-96d70",
+    "storage_bucket": "shootpointer-96d70.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:656177304579:android:ed844d23ce45c822946a36",
+        "android_client_info": {
+          "package_name": "com.znao.finalapp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDNFwtiaWcaHTBC56tLtC5w1b5-l5AapKM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

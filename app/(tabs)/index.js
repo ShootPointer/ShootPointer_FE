@@ -2,123 +2,119 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Video } from "expo-av";
 import { useRouter } from "expo-router";
-import React, { useState } from "react";
-import {
-  Dimensions,
-  FlatList,
-  Image,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
-
+import React, { useState, useEffect } from "react";
+import { Dimensions, FlatList, Image, Text, TouchableOpacity, View, ActivityIndicator } from "react-native";
+import api from "../api/api";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 export default function HomeScreen() {
   const [highlights, setHighlights] = useState([]);
-  const [user, setUser] = useState(null);
+  const [userInfo, setUserInfo] = useState(null);
+  const [loading, setLoading] = useState(true);
   const router = useRouter();
 
-  // useEffect(() => {
-  //   const init = async () => {
-  //     try {
-  //       const res = await api.get("/api/test-member");
-  //       const token = res.data?.data?.accessToken ?? res.data?.accessToken ?? res.data;
-  //       if (token) {
-  //         await AsyncStorage.setItem("accessToken", token);
-  //         api.defaults.headers.common["Authorization"] = `Bearer ${token}`;
-  //         console.log("[API] 임시 AccessToken 세팅 완료");
-  //       }
+useEffect(() => {
+  const fetchUserInfo = async () => {
+    try {
+      const token = await AsyncStorage.getItem("accessToken");
+      if (!token) return; // 토큰 없으면 API 요청하지 않음
 
-  //       setHighlights([
-  //         {
-  //           id: "1",
-  //           title: "이번 주 최고의 플레이!",
-  //           description: "홍길동 선수의 3점 슛 🎯",
-  //           media: "https://picsum.photos/400/300",
-  //           type: "image",
-  //         },
-  //         {
-  //           id: "2",
-  //           title: "하이라이트 영상",
-  //           description: "김철수 선수의 멋진 덩크!",
-  //           media: "https://www.w3schools.com/html/mov_bbb.mp4",
-  //           type: "video",
-  //         },
-  //       ]);
-  //     } catch (err) {
-  //       console.error("초기화 실패:", err);
-  //     }
-  //   };
+      const response = await api.get("/member/me", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = response.data.data;
 
-  //   init();
-  // }, []);
+      setUserInfo({
+        username: data.username,
+        backNumber: data.backNumber,
+        highlightCount: data.highlightCount,
+        totalThreePoint: data.totalThreePoint,
+        totalTwoPoint: data.totalTwoPoint,
+      });
 
-  // useEffect(() => {
-  //   fetchUserInfo();
-  // }, []);
+      const dummyHighlights = [
+        { id: "1", title: "경기 하이라이트 1", type: "video", media: "https://www.w3schools.com/html/mov_bbb.mp4" },
+        { id: "2", title: "경기 하이라이트 2", type: "video", media: "https://www.w3schools.com/html/mov_bbb.mp4" },
+        { id: "3", title: "경기 하이라이트 3", type: "video", media: "https://www.w3schools.com/html/mov_bbb.mp4" },
+      ];
+      setHighlights(dummyHighlights);
+    } catch (err) {
+      console.error("데이터 로드 실패:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  // const fetchUserInfo = async () => {
-  //   try {
-  //     const response = await api.get("https://tkv00.ddns.net/kakao/me");
-  //     console.log("유저 정보:", response.data);
-  //     if (response.status === 200) {
-  //       setUser(response.data);
-  //     }
-  //   } catch (error) {
-  //     console.error("유저 정보 조회 실패:", error);
-  //   }
-  // };
+  fetchUserInfo();
+}, []);
 
-  const renderHighlight = ({ item }) => (
-    <View style={styles.card}>
-      <Text style={styles.cardTitle}>{item.title}</Text>
-      {item.type === "image" ? (
-        <Image source={{ uri: item.media }} style={styles.cardMedia} />
-      ) : (
-        <Video
-          source={{ uri: item.media }}
-          style={styles.cardMedia}
-          useNativeControls
-          resizeMode="cover"
-          isLooping
-        />
-      )}
-      <Text style={styles.cardDesc}>{item.description}</Text>
-      <TouchableOpacity style={styles.cardButton}>
-        <Text style={styles.cardButtonText}>더 보기</Text>
-      </TouchableOpacity>
-    </View>
-  );
+const renderHighlight = ({ item }) => (
+  <View style={styles.highlightCard}>
+    {item.type === "image" ? (
+      <Image source={{ uri: item.media }} style={styles.highlightImage} />
+    ) : (
+      <Video
+        source={{ uri: item.media }}
+        style={styles.highlightImage}
+        resizeMode="cover"
+        useNativeControls
+      />
+    )}
+    <Text style={styles.highlightTitle}>{item.title}</Text>
+  </View>
+);
+
+
+  if (loading) {
+    return (
+      <View style={[styles.container, { justifyContent: "center", alignItems: "center" }]}>
+        <ActivityIndicator size="large" color="#ff6a33" />
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
-      {/* 상단 로고 + 랭킹 버튼 */}
+      {/* 상단 */}
       <View style={styles.header}>
-        <Image
-          source={require("../../assets/images/logo2.png")}
-          style={styles.logo}
-        />
+        <Image source={require("../../assets/images/logo2.png")} style={styles.logo} />
         <TouchableOpacity onPress={() => router.push("/RankingScreen")}>
           <Ionicons name="flame-outline" size={26} color="#ff6a33" />
         </TouchableOpacity>
       </View>
 
-      <View style={styles.bottomArea}>
-        <View style={styles.infoCard}>
-          <Text style={styles.infoTitle}>내 정보</Text>
-          <Text style={styles.infoContent}>님, 환영합니다!</Text>
-          <Text style={styles.infoContent}>등번호: 23</Text>
-          <Text style={styles.infoContent}>포지션: 가드</Text>
-        </View>
+      {userInfo && (
+  <View style={styles.userCard}>
+    <View style={styles.userTopRow}>
+      <View>
+        <Text style={styles.userName}>{userInfo.username} 님</Text>
+        <Text style={styles.userMatchInfo}> 하이라이트 {userInfo.highlightCount}</Text>
+      </View>
+      <Text style={styles.userBackNumber}>No.{userInfo.backNumber}</Text>
+    </View>
 
-        <View style={styles.bottomComponent}>
-          <FlatList
-            data={highlights}
-            keyExtractor={(item) => item.id}
-            renderItem={renderHighlight}
-            horizontal
-            showsHorizontalScrollIndicator={false}
-          />
-        </View>
+    <View style={styles.statsRow}>
+      <View style={styles.statBox}>
+        <Text style={styles.statValue}>{userInfo.totalThreePoint}</Text>
+        <Text style={styles.statLabel}>3점슛</Text>
+      </View>
+      <View style={styles.statBox}>
+        <Text style={styles.statValue}>{userInfo.totalTwoPoint}</Text>
+        <Text style={styles.statLabel}>2점슛</Text>
+      </View>
+    </View>
+  </View>
+)}
+
+      {/* 주간 하이라이트 리스트 */}
+      <View style={styles.highlightList}>
+        <Text style={styles.sectionTitle}>   이 주의 하이라이트</Text>
+        <FlatList
+          data={highlights}
+          keyExtractor={(item) => item.id}
+          renderItem={renderHighlight}
+          horizontal
+          showsHorizontalScrollIndicator={false}
+        />
       </View>
     </View>
   );
@@ -127,72 +123,54 @@ export default function HomeScreen() {
 const { width } = Dimensions.get("window");
 
 const styles = {
-  container: { flex: 1, backgroundColor: "#111111" },
+  container: { flex: 1, backgroundColor: "#111111", paddingTop: 40 },
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
     paddingHorizontal: 15,
-    paddingTop: 40,
-    marginBottom: 20,
   },
-  logo: { marginTop: 30, width: 120, height: 40 },
-  bottomArea: { flex: 1, justifyContent: "flex-end", paddingBottom: 20 },
-  infoCard: {
-    backgroundColor: "#000",
-    borderRadius: 12,
+  logo: { width: 120, height: 40 },
+    userCard: {
+    backgroundColor: "#1c1c1c",
+    borderRadius: 20,
     padding: 20,
-    marginHorizontal: 15,
-    marginBottom: 20,
+    margin: 15,
     shadowColor: "#000",
-    shadowOpacity: 0.3,
-    shadowOffset: { width: 0, height: 2 },
-    shadowRadius: 4,
-    elevation: 3,
-    alignSelf: "center",
-    width: 350,
-    height: 350,
+    shadowOpacity: 0.5,
+    shadowOffset: { width: 0, height: 3 },
+    shadowRadius: 6,
+    elevation: 5,
+    height:350,
+    justifyContent: "space-between", // 상단과 하단 분리
+
   },
-  infoTitle: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: "#ff6a33",
-    marginBottom: 10,
-  },
-  infoContent: {
-    fontSize: 16,
-    color: "#fff",
-    marginBottom: 5,
-  },
-  bottomComponent: {
-    height: 250,
-    paddingVertical: 10,
-  },
-  card: {
-    width: 300,
-    backgroundColor: "#000",
-    borderRadius: 12,
-    marginHorizontal: 10,
-    padding: 15,
-    shadowColor: "#000",
-    shadowOpacity: 0.3,
-    shadowOffset: { width: 0, height: 2 },
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  cardTitle: {
-    fontSize: 16,
-    fontWeight: "bold",
-    color: "#fff",
-    marginBottom: 10,
-  },
-  cardMedia: { width: "100%", height: 180, borderRadius: 10, marginBottom: 10 },
-  cardDesc: { color: "#ddd", marginBottom: 10 },
-  cardButton: {
-    paddingVertical: 8,
-    borderRadius: 8,
-    backgroundColor: "#ff6a33",
+  userTopRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
     alignItems: "center",
+    marginBottom: 15,
   },
-  cardButtonText: { color: "#fff", fontSize: 14, fontWeight: "bold" },
+  userName: { fontSize: 20, fontWeight: "bold", color: "#ff6a33" },
+  userMatchInfo: { fontSize: 14, color: "#aaa", marginTop: 2 },
+  userBackNumber: { fontSize: 18, fontWeight: "bold", color: "#fff" },
+  statsRow: {
+    flexDirection: "row",
+    justifyContent: "space-around",
+    backgroundColor: "#2a2a2a",
+    borderRadius: 12,
+    paddingVertical: 15,
+  },
+  statBox: { alignItems: "center" },
+  statValue: { color: "#fff", fontSize: 18, fontWeight: "bold" },
+  statLabel: { color: "#aaa", fontSize: 14, marginTop: 2 },
+  highlightCard: {
+    marginRight: 10,
+    width: 200,
+    borderRadius: 12,
+    overflow: "hidden",
+  },
+  highlightImage: { width: 180, height: 300, borderRadius: 12 ,margin:20,},
+  highlightTitle: { color: "#fff", fontSize: 14, marginTop: 5, textAlign: "center" },
+  sectionTitle:{ color: "#fff", fontSize: 18, marginTop: 5,},
 };
