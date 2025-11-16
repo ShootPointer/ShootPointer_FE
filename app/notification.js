@@ -1,3 +1,4 @@
+/*
 // notification.js
 import * as Device from "expo-device";
 import * as Notifications from "expo-notifications";
@@ -13,10 +14,10 @@ Notifications.setNotificationHandler({
   }),
 });
 
-/**
+/!**
  * FCM 토큰 등록 함수
  * @returns {Object|null} { expoToken, fcmToken } 또는 null
- */
+ *!/
 export async function registerForPushNotificationsAsync() {
   console.log("📱 알림 권한 요청 시작...");
 
@@ -90,9 +91,9 @@ export async function registerForPushNotificationsAsync() {
   }
 }
 
-/**
+/!**
  * 로컬 알림 테스트용 (개발 중 테스트)
- */
+ *!/
 export async function sendTestNotification() {
   await Notifications.scheduleNotificationAsync({
     content: {
@@ -103,4 +104,4 @@ export async function sendTestNotification() {
     trigger: { seconds: 2 },
   });
   console.log("✅ 테스트 알림 예약됨 (2초 후)");
-}
+}*/

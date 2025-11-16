@@ -6,7 +6,7 @@ import { useRouter, Stack } from 'expo-router';
 import * as Device from 'expo-device';
 import ConfirmModal from './ConfirmModal';
 import api from './api/api';
-import messaging from '@react-native-firebase/messaging';
+//import messaging from '@react-native-firebase/messaging';
 
 // SettingsScreen
 export default function SettingsScreen() {
@@ -18,9 +18,9 @@ export default function SettingsScreen() {
   const fadeAnim = useState(new Animated.Value(0))[0];
 
   // 초기 알림 설정 로드
-  useEffect(() => {
+/*  useEffect(() => {
     loadNotificationSettings();
-  }, []);
+  }, []);*/
 
   const loadNotificationSettings = async () => {
     try {
