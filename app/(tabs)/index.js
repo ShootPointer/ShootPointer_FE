@@ -3,6 +3,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { Video } from "expo-av";
 import { useRouter } from "expo-router";
 import React, { useState, useEffect } from "react";
+import { ImageBackground } from "react-native";
 import { Dimensions, FlatList, Image, Text, TouchableOpacity, View, ActivityIndicator } from "react-native";
 import api from "../api/api";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -83,7 +84,12 @@ const renderHighlight = ({ item }) => (
       </View>
 
       {userInfo && (
-  <View style={styles.userCard}>
+  <ImageBackground
+    source={require("../../assets/images/Profile.png")}
+    style={styles.userCard}
+    imageStyle={{ borderRadius: 20 }} // userCard랑 같은 둥근 모서리 적용
+    resizeMode="contain"
+  >
     <View style={styles.userTopRow}>
       <View>
         <Text style={styles.userName}>{userInfo.username} 님</Text>
@@ -102,7 +108,7 @@ const renderHighlight = ({ item }) => (
         <Text style={styles.statLabel}>2점슛</Text>
       </View>
     </View>
-  </View>
+  </ImageBackground>
 )}
 
       {/* 주간 하이라이트 리스트 */}
@@ -132,7 +138,7 @@ const styles = {
   },
   logo: { width: 120, height: 40 },
     userCard: {
-    backgroundColor: "#1c1c1c",
+    backgroundColor:"#3b2219",
     borderRadius: 20,
     padding: 20,
     margin: 15,
@@ -151,13 +157,13 @@ const styles = {
     alignItems: "center",
     marginBottom: 15,
   },
-  userName: { fontSize: 20, fontWeight: "bold", color: "#ff6a33" },
+  userName: { fontSize: 20, fontWeight: "bold", color: "#fff" },
   userMatchInfo: { fontSize: 14, color: "#aaa", marginTop: 2 },
   userBackNumber: { fontSize: 18, fontWeight: "bold", color: "#fff" },
   statsRow: {
     flexDirection: "row",
     justifyContent: "space-around",
-    backgroundColor: "#2a2a2a",
+    backgroundColor: "#ff6a33",
     borderRadius: 12,
     paddingVertical: 15,
   },
@@ -170,7 +176,8 @@ const styles = {
     borderRadius: 12,
     overflow: "hidden",
   },
-  highlightImage: { width: 180, height: 300, borderRadius: 12 ,margin:20,},
+  highlightImage: { width: 180, height: 270, borderRadius: 12 ,margin:10,},
   highlightTitle: { color: "#fff", fontSize: 14, marginTop: 5, textAlign: "center" },
   sectionTitle:{ color: "#fff", fontSize: 18, marginTop: 5,},
+  
 };

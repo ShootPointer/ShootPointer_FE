@@ -9,14 +9,17 @@ import {
   TouchableWithoutFeedback,
   View,
 } from "react-native";
+import * as ImageManipulator from "expo-image-manipulator";
+import * as ImagePicker from "expo-image-picker";
 import FrontendUpload from "../FrontendUpload";
-
+import AgreeModal from "../agreeModal";
 export default function CaptureScreen() {
   const [step, setStep] = useState("input");
   const [jerseyNumber, setJerseyNumber] = useState("");
   const [frontImage, setFrontImage] = useState(null);
   const cameraRef = useRef(null);
   const [permission, requestPermission] = useCameraPermissions();
+  const [showModal, setShowModal] = useState(true); // ⭐ 탭 들어오자마자 모달 실행
 
   if (!permission) return <View />;
   if (!permission.granted) {
@@ -41,62 +44,115 @@ export default function CaptureScreen() {
 
   const isButtonEnabled = jerseyNumber.length === 2;
   const getBorderColor = (index) => (jerseyNumber[index] ? "#ff6a33" : "#aaa");
+const pickImageFromGallery = async () => {
+  Keyboard.dismiss();
+
+  const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+  if (!permission.granted) {
+    alert("갤러리 접근 권한이 필요합니다.");
+    return;
+  }
+
+  const result = await ImagePicker.launchImageLibraryAsync({
+    mediaTypes: ImagePicker.MediaTypeOptions.Images,
+    quality: 1,
+  });
+
+  if (!result.canceled) {
+    let image = result.assets[0];
+
+    // PNG이면 JPEG로 변환
+    if (image.uri.endsWith(".png") || image.type === "image/png") {
+      const manipulated = await ImageManipulator.manipulateAsync(
+        image.uri,
+        [], // 변형 없음
+        { format: ImageManipulator.SaveFormat.JPEG, compress: 1 }
+      );
+      image = { ...image, uri: manipulated.uri, type: "image/jpeg", fileName: image.fileName.replace(".png", ".jpg") };
+    }
+
+    setFrontImage(image);
+    setStep("upload");
+  }
+};
 
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
       <View style={styles.container}>
+        <AgreeModal
+        visible={showModal}
+        onClose={() => setShowModal(false)}
+      />
         {step === "input" && (
-          <>
-            <View style={styles.topLabel}>
-              <Text style={styles.whiteText}>본인의</Text>
-            </View>
-            <View style={styles.inlineLabel}>
-              <Text style={styles.orangeText}>등번호</Text>
-              <Text style={styles.whiteText}>를 입력하세요:</Text>
-            </View>
+  <>
+    <View style={styles.topLabel}>
+      <Text style={styles.whiteText}>본인의</Text>
+    </View>
+    <View style={styles.inlineLabel}>
+      <Text style={styles.orangeText}>등번호</Text>
+      <Text style={styles.whiteText}>를 입력하세요:</Text>
+    </View>
 
-            <View style={styles.centerContainer}>
-              <View style={styles.inputRow}>
-                <TextInput
-                  value={jerseyNumber[0] || ""}
-                  onChangeText={(t) =>
-                    setJerseyNumber((prev) =>
-                      t ? t[0] + (prev[1] || "") : prev[1] || ""
-                    )
-                  }
-                  maxLength={1}
-                  keyboardType="numeric"
-                  style={[styles.inputBox, { borderColor: getBorderColor(0) }]}
-                />
-                <TextInput
-                  value={jerseyNumber[1] || ""}
-                  onChangeText={(t) =>
-                    setJerseyNumber((prev) => (prev[0] || "") + (t ? t[0] : ""))
-                  }
-                  maxLength={1}
-                  keyboardType="numeric"
-                  style={[styles.inputBox, { borderColor: getBorderColor(1) }]}
-                />
-              </View>
-            </View>
+    <View style={styles.centerContainer}>
+      <View style={styles.inputRow}>
+        <TextInput
+          value={jerseyNumber[0] || ""}
+          onChangeText={(t) =>
+            setJerseyNumber((prev) =>
+              t ? t[0] + (prev[1] || "") : prev[1] || ""
+            )
+          }
+          maxLength={1}
+          keyboardType="numeric"
+          style={[styles.inputBox, { borderColor: getBorderColor(0) }]}
+        />
+        <TextInput
+          value={jerseyNumber[1] || ""}
+          onChangeText={(t) =>
+            setJerseyNumber((prev) => (prev[0] || "") + (t ? t[0] : ""))
+          }
+          maxLength={1}
+          keyboardType="numeric"
+          style={[styles.inputBox, { borderColor: getBorderColor(1) }]}
+        />
+      </View>
+    </View>
 
-            <View style={styles.buttonContainer}>
-              <TouchableOpacity
-                style={[
-                  styles.captureButton,
-                  { backgroundColor: isButtonEnabled ? "#ff6a33" : "#555" },
-                ]}
-                disabled={!isButtonEnabled}
-                onPress={() => {
-                  Keyboard.dismiss(); // 버튼 누르면 키보드 닫기
-                  setStep("front");
-                }}
-              >
-                <Text style={styles.buttonText}>완료</Text>
-              </TouchableOpacity>
-            </View>
-          </>
-        )}
+    {/* 선택 버튼 두 개 추가 */}
+    <View style={styles.buttonContainer}>
+      {/* 📸 사진 촬영하기 */}
+      <TouchableOpacity
+        style={[
+          styles.captureButton,
+          { backgroundColor: isButtonEnabled ? "#ff6a33" : "#555" },
+        ]}
+        disabled={!isButtonEnabled}
+        onPress={() => {
+          Keyboard.dismiss();
+          setStep("front");
+        }}
+      >
+        <Text style={styles.buttonText}>사진 촬영하기</Text>
+      </TouchableOpacity>
+
+      {/* 🖼 사진 선택하기 */}
+      <TouchableOpacity
+        style={[
+          styles.captureButton,
+          { backgroundColor: isButtonEnabled ? "#444" : "#333" },
+        ]}
+        disabled={!isButtonEnabled}
+        onPress={pickImageFromGallery}
+      >
+        <Text style={[styles.buttonText, { fontSize: 16 }]}>
+          사진 선택하기
+        </Text>
+      </TouchableOpacity>
+    </View>
+  </>
+)}
+
+
 
         {step === "front" && (
           <View style={{ flex: 1 }}>
@@ -223,4 +279,18 @@ const styles = StyleSheet.create({
     borderRadius: 30,
     backgroundColor: "#ff6a33",
   },
+  buttonContainer: { 
+  width: "100%", 
+  marginBottom: 20 
+},
+captureButton: {
+  paddingVertical: 15,
+  borderRadius: 12,
+  alignItems: "center",
+  marginBottom: 12,
+  backgroundColor: "#ff6a33",
+  alignSelf: "center",
+  width: "90%",
+},
+
 });
