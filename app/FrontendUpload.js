@@ -316,7 +316,10 @@ const FrontendUpload = ({ jerseyNumber, frontImage }) => {
       console.log("📥 응답:", res.status, res.data);
 
       if (res.status === 200 && res.data.success === true) {
-        console.log("✅ 번호, 등 사진 업로드 성공");
+
+        console.log(res.data);
+        Alert.alert("번호, 등 사진 업로드 성공");
+
         setVideoOk(true);
         Alert.alert("성공", "등번호 사진이 업로드되었습니다!");
       } else {
