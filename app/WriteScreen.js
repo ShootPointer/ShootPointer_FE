@@ -93,7 +93,7 @@ export default function WriteScreen() {
           {/* 하이라이트 이미지 */}
             <TouchableOpacity
               style={styles.selectButton}
-              onPress={() => router.push("/HighlightScreen")}
+              onPress={() => router.push("/CalendarScreen")}
             >
               <Text style={styles.buttonText}>하이라이트 선택하기</Text>
             </TouchableOpacity>
