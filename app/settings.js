@@ -1,6 +1,5 @@
-// app/SettingsScreen.js
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Switch, Image, Animated, Alert, Platform } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Switch, Image, Animated, Alert } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter, Stack } from 'expo-router';
 import * as Device from 'expo-device';
@@ -8,7 +7,6 @@ import ConfirmModal from './ConfirmModal';
 import api from './api/api';
 //import messaging from '@react-native-firebase/messaging';
 
-// SettingsScreen
 export default function SettingsScreen() {
   const router = useRouter();
   const [modalVisible, setModalVisible] = useState(false);
@@ -17,24 +15,18 @@ export default function SettingsScreen() {
   const [toastVisible, setToastVisible] = useState(false);
   const fadeAnim = useState(new Animated.Value(0))[0];
 
-  // 초기 알림 설정 로드
-/*  useEffect(() => {
-    loadNotificationSettings();
-  }, []);*/
 
   const loadNotificationSettings = async () => {
     try {
       const fcmToken = await AsyncStorage.getItem('fcmToken');
       const enabled = fcmToken !== null;
       setNotificationsEnabled(enabled);
-      console.log('📱 알림 설정 로드:', enabled ? 'ON' : 'OFF');
-      if (fcmToken) console.log('🔑 저장된 FCM 토큰:', fcmToken);
+      console.log('📱 알림 설정:', enabled ? 'ON' : 'OFF');
     } catch (error) {
       console.error('❌ 알림 설정 로드 실패:', error);
     }
   };
 
-  // 토스트 표시
   const showToast = () => {
     setToastVisible(true);
     Animated.timing(fadeAnim, {
@@ -52,8 +44,8 @@ export default function SettingsScreen() {
     });
   };
 
-  // 모달 표시
   const showModal = (action) => {
+    console.log('🔔 모달 표시:', action);
     if (action === 'notification') {
       if (notificationsEnabled) {
         setModalAction('notification');
@@ -67,55 +59,49 @@ export default function SettingsScreen() {
     }
   };
 
-  // FCM 토큰 발급 (Android 전용)
-const registerFCMToken = async () => {
-  try {
-    if (!Device.isDevice) {
-      Alert.alert('실제 디바이스에서만 알림을 받을 수 있습니다.');
+  const registerFCMToken = async () => {
+    try {
+      if (!Device.isDevice) {
+        Alert.alert('실제 디바이스에서만 알림을 받을 수 있습니다.');
+        return null;
+      }
+
+      const fcmToken = await messaging().getToken();
+      if (!fcmToken) {
+        Alert.alert('FCM 토큰을 가져올 수 없습니다.');
+        return null;
+      }
+
+      await AsyncStorage.setItem('fcmToken', fcmToken);
+      await AsyncStorage.setItem('notificationsEnabled', 'true');
+      setNotificationsEnabled(true);
+      console.log('✅ FCM 토큰 발급:', fcmToken.substring(0, 20) + '...');
+      showToast();
+
+      return fcmToken;
+    } catch (error) {
+      console.error('❌ FCM 토큰 발급 실패:', error);
+      Alert.alert('알림 설정 중 오류가 발생했습니다.');
       return null;
     }
+  };
 
-    // FCM 토큰 발급
-    const fcmToken = await messaging().getToken();
-    if (!fcmToken) {
-      Alert.alert('FCM 토큰을 가져올 수 없습니다.');
-      return null;
+  const deleteFCMToken = async () => {
+    try {
+      const fcmToken = await AsyncStorage.getItem('fcmToken');
+      if (fcmToken) {
+        await messaging().deleteToken();
+        await AsyncStorage.removeItem('fcmToken');
+        await AsyncStorage.setItem('notificationsEnabled', 'false');
+        console.log('🗑️ FCM 토큰 삭제 완료');
+      }
+      setNotificationsEnabled(false);
+      showToast();
+    } catch (error) {
+      console.error('❌ FCM 토큰 삭제 실패:', error);
     }
+  };
 
-    await AsyncStorage.setItem('fcmToken', fcmToken);
-    await AsyncStorage.setItem('notificationsEnabled', 'true');
-    setNotificationsEnabled(true);
-    console.log('✅ FCM 토큰 발급 완료:', fcmToken);
-    showToast();
-
-    return fcmToken;
-  } catch (error) {
-    console.error('❌ FCM 토큰 발급 실패:', error);
-    Alert.alert('알림 설정 중 오류가 발생했습니다.');
-    return null;
-  }
-};
-
-// FCM 토큰 삭제 (Android 전용)
-const deleteFCMToken = async () => {
-  try {
-    const fcmToken = await AsyncStorage.getItem('fcmToken');
-    if (fcmToken) {
-      await messaging().deleteToken();
-      await AsyncStorage.removeItem('fcmToken');
-      await AsyncStorage.setItem('notificationsEnabled', 'false');
-      console.log('🗑️ FCM 토큰 삭제 완료');
-    } else {
-      console.log('⚠️ 삭제할 FCM 토큰 없음');
-    }
-    setNotificationsEnabled(false);
-    showToast();
-  } catch (error) {
-    console.error('❌ FCM 토큰 삭제 실패:', error);
-  }
-};
-
-  // 알림 켜기/끄기
   const handleNotificationToggle = async (enable) => {
     try {
       if (enable) {
@@ -129,31 +115,76 @@ const deleteFCMToken = async () => {
     }
   };
 
-  // ConfirmModal 확인 처리
   const handleConfirm = async () => {
+    console.log('\n=== 작업 시작:', modalAction, '===');
     setModalVisible(false);
 
     try {
       if (modalAction === 'logout') {
+        console.log('🚪 로그아웃 처리 중...');
+        
+        // 1. FCM 토큰 삭제
         await deleteFCMToken();
+        
+        // 2. AsyncStorage 확인
+        const beforeToken = await AsyncStorage.getItem('accessToken');
+        console.log('🔑 삭제 전 토큰:', beforeToken ? '있음' : '없음');
+        
+        // 3. 토큰 삭제
         await AsyncStorage.removeItem('accessToken');
         await AsyncStorage.removeItem('refreshToken');
-        router.replace('/login');
+        
+        // 4. 삭제 확인
+        const afterToken = await AsyncStorage.getItem('accessToken');
+        console.log('🔑 삭제 후 토큰:', afterToken ? '있음 (삭제실패!)' : '없음 (삭제성공)');
+        
+        // 5. 모든 키 확인
+        const allKeys = await AsyncStorage.getAllKeys();
+        console.log('📦 남은 키들:', allKeys);
+        
+        console.log('➡️ /login으로 이동 시도');
+        
+        // 여러 방법 시도
+        try {
+          router.replace('/login');
+          console.log('✅ router.replace 호출 완료');
+        } catch (routerError) {
+          console.error('❌ router.replace 실패:', routerError);
+          // 대안
+          router.push('/login');
+        }
+        
       } else if (modalAction === 'delete') {
+        console.log('🗑️ 회원 탈퇴 처리 중...');
+        
         const response = await api.delete('/kakao');
+        console.log('📥 탈퇴 응답:', response.data);
+        
         if (response.data.success) {
           await deleteFCMToken();
           await AsyncStorage.clear();
+          
+          const allKeys = await AsyncStorage.getAllKeys();
+          console.log('📦 clear 후 남은 키:', allKeys);
+          
+          console.log('➡️ /login으로 이동 시도');
           router.replace('/login');
         } else {
-          Alert.alert('회원 탈퇴 실패', response.data.error?.message || '');
+          console.error('❌ 탈퇴 실패:', response.data);
+          Alert.alert('회원 탈퇴 실패', response.data.error?.message || '알 수 없는 오류');
         }
+        
       } else if (modalAction === 'notification') {
         await handleNotificationToggle(false);
       }
+      
+      console.log('=== 작업 완료 ===\n');
+      
     } catch (err) {
-      console.error('❌ 작업 실패:', err);
-      Alert.alert('작업 중 오류가 발생했습니다.');
+      console.error('\n❌❌❌ 작업 실패 ❌❌❌');
+      console.error('에러:', err);
+      console.error('스택:', err.stack);
+      Alert.alert('오류', err.message || '작업 중 오류가 발생했습니다.');
     }
   };
 
@@ -162,7 +193,10 @@ const deleteFCMToken = async () => {
       <Stack.Screen options={{ headerShown: false }} />
       <View style={styles.container}>
         <View style={styles.header}>
-          <TouchableOpacity onPress={() => router.back()}>
+          <TouchableOpacity onPress={() => {
+            console.log('⬅️ 뒤로가기');
+            router.back();
+          }}>
             <Image source={require('../assets/images/back.png')} style={styles.backIcon} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>설정</Text>
@@ -186,10 +220,22 @@ const deleteFCMToken = async () => {
         {/* 기타 섹션 */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>기타</Text>
-          <TouchableOpacity style={styles.button} onPress={() => showModal('logout')}>
+          <TouchableOpacity 
+            style={styles.button} 
+            onPress={() => {
+              console.log('🖱️ 로그아웃 버튼 클릭');
+              showModal('logout');
+            }}
+          >
             <Text style={styles.buttonText}>로그아웃</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.button} onPress={() => showModal('delete')}>
+          <TouchableOpacity 
+            style={styles.button} 
+            onPress={() => {
+              console.log('🖱️ 회원탈퇴 버튼 클릭');
+              showModal('delete');
+            }}
+          >
             <Text style={styles.buttonText}>회원 탈퇴</Text>
           </TouchableOpacity>
         </View>
@@ -198,8 +244,14 @@ const deleteFCMToken = async () => {
         <ConfirmModal
           title={modalAction === 'logout' ? '로그아웃' : modalAction === 'delete' ? '회원탈퇴' : '알림 끄기'}
           visible={modalVisible}
-          onConfirm={handleConfirm}
-          onCancel={() => setModalVisible(false)}
+          onConfirm={() => {
+            console.log('✅ 모달 확인 버튼 클릭');
+            handleConfirm();
+          }}
+          onCancel={() => {
+            console.log('❌ 모달 취소 버튼 클릭');
+            setModalVisible(false);
+          }}
           message={
             modalAction === 'logout'
               ? '정말 로그아웃 하시겠습니까?'

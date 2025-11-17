@@ -1,7 +1,15 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, StyleSheet, TouchableOpacity, Image, ActivityIndicator } from "react-native";
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  Image,
+  ActivityIndicator,
+} from "react-native";
 import { useRouter } from "expo-router";
 import api from "../api/api"; // axios instance
+import profileimage from "../../assets/images/profileimage.png";
 
 export default function MyPointerScreen() {
   const router = useRouter();
@@ -18,7 +26,7 @@ export default function MyPointerScreen() {
         setUser({
           username: data.username,
           email: data.email,
-          profileImage: "https://picsum.photos/200", // 필요시 프로필 이미지 API로 교체
+          profileImage: profileimage,
         });
       } catch (err) {
         console.error("❌ GET /member/me 실패:", err);
@@ -73,7 +81,7 @@ export default function MyPointerScreen() {
 
       {/* 프로필 카드 */}
       <View style={styles.profileCard}>
-        <Image source={{ uri: user.profileImage }} style={styles.profileImage} />
+        <Image source={user.profileImage} style={styles.profileImage} />
         <View style={styles.profileInfo}>
           <Text style={styles.userName}>{user.username}</Text>
           <Text style={styles.userEmail}>{user.email}</Text>
@@ -194,8 +202,17 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     padding: 15,
   },
-  historyTitle: { color: "#fff", fontSize: 16, fontWeight: "bold", marginBottom: 10 },
-  historyItem: { flexDirection: "row", alignItems: "center", paddingVertical: 10 },
+  historyTitle: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "bold",
+    marginBottom: 10,
+  },
+  historyItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 10,
+  },
   historyIcon: { width: 20, height: 20, marginRight: 10, tintColor: "#fff" },
   historyText: { color: "#fff", fontSize: 15 },
 });
