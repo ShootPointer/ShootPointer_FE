@@ -1,21 +1,22 @@
-import React, { useState, useEffect } from "react";
+import { Stack, useRouter } from "expo-router";
+import { useEffect, useState } from "react";
 import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  FlatList,
-  Image,
   ActivityIndicator,
   Alert,
+  FlatList,
+  Image,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
-import api from "./api/api"; 
-import { Stack } from "expo-router";
+import api from "./api/api";
 
 const RankingScreen = () => {
   const [rankData, setRankData] = useState([]);
   const [loading, setLoading] = useState(false);
   const [selectedTab, setSelectedTab] = useState("weekly"); // weekly / monthly
+  const router = useRouter();
 
   useEffect(() => {
     fetchRanking(selectedTab);
@@ -25,11 +26,8 @@ const RankingScreen = () => {
   const fetchRanking = async (type) => {
     setLoading(true);
     try {
-
       const url =
-        type === "weekly"
-          ? "/api/rank/this-week"
-          : "/api/rank/this-month";
+        type === "weekly" ? "/api/rank/this-week" : "/api/rank/this-month";
 
       const response = await api.get(url);
       console.log("📥 서버 응답:", response.data);
@@ -38,7 +36,10 @@ const RankingScreen = () => {
         setRankData(response.data.data.rankingList);
       } else {
         setRankData([]);
-        Alert.alert("불러오기 실패", response.data.message || "데이터가 없습니다.");
+        Alert.alert(
+          "불러오기 실패",
+          response.data.message || "데이터가 없습니다."
+        );
       }
     } catch (error) {
       console.error("❌ 랭킹 불러오기 오류:", error);
@@ -80,14 +81,17 @@ const RankingScreen = () => {
   return (
     <View style={styles.container}>
       <Stack.Screen options={{ headerShown: false }} />
-              <View style={styles.header}>
-                <TouchableOpacity onPress={() => router.back()}>
-                  <Image source={require('../assets/images/back.png')} style={styles.backIcon} />
-                </TouchableOpacity>
-                <Text style={styles.headerTitle}>설정</Text>
-                <View style={{ width: 28 }} />
-              </View>
-      
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => router.back()}>
+          <Image
+            source={require("../assets/images/back.png")}
+            style={styles.backIcon}
+          />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>설정</Text>
+        <View style={{ width: 28 }} />
+      </View>
+
       <Text style={styles.title}>득점 랭킹</Text>
       <Text style={styles.subtitle}>주간 / 월간 슈터들을 확인해 보세요!</Text>
 
@@ -130,7 +134,11 @@ const RankingScreen = () => {
 
       {/* ✅ 로딩 / 리스트 / 데이터 없음 처리 */}
       {loading ? (
-        <ActivityIndicator size="large" color="#ff6600" style={{ marginTop: 40 }} />
+        <ActivityIndicator
+          size="large"
+          color="#ff6600"
+          style={{ marginTop: 40 }}
+        />
       ) : rankData.length === 0 ? (
         <Text style={{ color: "#aaa", textAlign: "center", marginTop: 40 }}>
           랭킹 데이터가 없습니다 😥
