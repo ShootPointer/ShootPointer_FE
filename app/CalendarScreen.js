@@ -10,6 +10,7 @@ import {
   View,
 } from "react-native";
 import { Calendar } from "react-native-calendars";
+import api from "./api/api";
 
 export default function HighlightCalendar() {
   //오늘 날짜 초기값
@@ -36,7 +37,7 @@ export default function HighlightCalendar() {
     setLoading(true);
     try {
       const response = await api.get(
-        `/api/calendar?year=${year}&month=${month}`
+        `api/highlight/calendar?year=${year}&month=${month}`
       );
 
       //조회 성공

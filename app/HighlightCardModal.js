@@ -102,16 +102,13 @@ export default function HighlightCardModal() {
       <Stack.Screen options={{ headerShown: false }} />
       <View style={styles.container}>
         {/* 헤더 */}
-        {post ? (
-          <View style={styles.header}>
-            <TouchableOpacity onPress={() => router.back()}>
-              <Ionicons name="close" size={28} color="#fff" />
-            </TouchableOpacity>
-            <Text style={styles.headerTitle}>하이라이트 선택</Text>
-            <View style={{ width: 28 }} />
-          </View>
-        ) : null}
-
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => router.back()}>
+            <Ionicons name="close" size={28} color="#fff" />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>{post ? "하이라이트 선택" : "하이라이트 미리보기"}</Text>
+          <View style={{ width: 28 }} />
+        </View>
         <ScrollView
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.scrollContent}
