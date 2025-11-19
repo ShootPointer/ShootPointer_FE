@@ -119,42 +119,46 @@ export default function HomeScreen() {
 
       {/* 사용자 카드 */}
       {userInfo && (
-        <ImageBackground
-  source={require("../../assets/images/Profile.png")}
-  style={styles.userCard}
-  imageStyle={{
-    width: '80%',
-    height: '80%',
-    position:"absolute",
-    marginTop: 50,       // 위쪽 여백
-    marginLeft:50,
-  }}
-  resizeMode="contain"        >
-          <View style={styles.userTopRow}>
-            <View>
-              <Text style={styles.userName}>{userInfo.username}</Text>
-              <Text style={styles.userMatchInfo}>
-                하이라이트 {userInfo.highlightCount}
-              </Text>
+        <View style={styles.cardContainer}>
+          {/* 하단 그림자 */}
+          <View style={styles.bottomShadow} />
+          <ImageBackground
+            source={require("../../assets/images/Profile.png")}
+            style={styles.userCard}
+            imageStyle={{
+              width: '80%',
+              height: '80%',
+              position:"absolute",
+              marginTop: 50,
+              marginLeft:50,
+            }}
+            resizeMode="contain"
+          >
+            <View style={styles.userTopRow}>
+              <View>
+                <Text style={styles.userName}>{userInfo.username}</Text>
+                <Text style={styles.userMatchInfo}>
+                  하이라이트 {userInfo.highlightCount}
+                </Text>
+              </View>
+              <View style={styles.userBackNumberWrap}>
+                <Text style={styles.backNumberLabel}>No.</Text>
+                <Text style={styles.backNumberValue}>{userInfo.backNumber}</Text>
+              </View>
             </View>
-            <View style={styles.userBackNumberWrap}>
-  <Text style={styles.backNumberLabel}>No.</Text>
-  <Text style={styles.backNumberValue}>{userInfo.backNumber}</Text>
-</View>
-          </View>
 
-          <View style={styles.statsRow}>
-            <View style={styles.statBox}>
-              <Text style={styles.statLabel}>3점슛</Text>
-              <Text style={styles.statValue}>{userInfo.totalThreePoint}회</Text>
+            <View style={styles.statsRow}>
+              <View style={styles.statBox}>
+                <Text style={styles.statLabel}>3점슛</Text>
+                <Text style={styles.statValue}>{userInfo.totalThreePoint}회</Text>
+              </View>
+              <View style={styles.statBox}>
+                <Text style={styles.statLabel}>2점슛</Text>
+                <Text style={styles.statValue}>{userInfo.totalTwoPoint}회</Text>
+              </View>
             </View>
-            <View style={styles.statBox}>
-                            <Text style={styles.statLabel}>2점슛</Text>
-
-              <Text style={styles.statValue}>{userInfo.totalTwoPoint}회</Text>
-            </View>
-          </View>
-        </ImageBackground>
+          </ImageBackground>
+        </View>
       )}
 
       {/* 주간 하이라이트 */}
@@ -175,30 +179,39 @@ export default function HomeScreen() {
 const { width } = Dimensions.get("window");
 
 const styles = {
-  container: { flex: 1, backgroundColor: "#111111", paddingTop: 40,paddingLeft:10 },
+  container: { flex: 1, backgroundColor: "#111111", paddingTop: 40, paddingLeft: 10 },
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
     paddingHorizontal: 15,
-    marginTop:10
+    marginTop: 10
   },
   logo: { width: 120, height: 40 },
+
+  cardContainer: {
+    margin: 15,
+    marginTop: 50,
+  },
+
+  bottomShadow: {
+    position: 'absolute',
+    bottom: -10,
+    left: -6,
+    right: 15,
+    height: 360,
+    backgroundColor: '#000',
+    opacity: 0.1,
+    borderRadius: 30,
+  },
 
   userCard: {
     backgroundColor: "#3b2219",
     borderRadius: 20,
     padding: 20,
-    margin: 15,
-    shadowColor: "#000",
-    shadowOpacity: 0.5,
-    shadowOffset: { width: 0, height: 3 },
-    shadowRadius: 6,
-    elevation: 5,
     height: 350,
-    width:350,
+    width: 350,
     justifyContent: "space-between",
-    marginTop:50
   },
 
   userTopRow: {
@@ -209,52 +222,52 @@ const styles = {
   },
   userName: { fontSize: 20, fontWeight: "bold", color: "#fff" },
   userMatchInfo: { fontSize: 14, color: "#aaa", marginTop: 2 },
-userBackNumberWrap: {
-  flexDirection: "row",
-  alignItems: "center",
-},
+  userBackNumberWrap: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
 
-backNumberLabel: {
-  fontSize: 16,
-  color: "#ffffffaa",  // 조금 연하고 얇게
-  fontWeight: "300",   // 얇게
-  marginRight: 3,
-},
+  backNumberLabel: {
+    fontSize: 16,
+    color: "#ffffffaa",
+    fontWeight: "300",
+    marginRight: 3,
+  },
 
-backNumberValue: {
-  fontSize: 28,        // 크게!
-  color: "#fff",
-  fontWeight: "bold",  // 두껍게!
-  marginBottom:10
-},
+  backNumberValue: {
+    fontSize: 28,
+    color: "#fff",
+    fontWeight: "bold",
+    marginBottom: 10
+  },
 
- statsRow: {
-  flexDirection: "row",
-  justifyContent: "space-around",
-  backgroundColor: "#ff6a33",
-  borderRadius: 12,
-  paddingVertical: 20,
-  alignItems: "center",
-},
+  statsRow: {
+    flexDirection: "row",
+    justifyContent: "space-around",
+    backgroundColor: "#ff6a33",
+    borderRadius: 12,
+    paddingVertical: 20,
+    alignItems: "center",
+  },
 
   statBox: { 
-  alignItems: "center",
-  flexDirection: "row",      // 가로 정렬!
-  gap:5,
-},
-statValue: { 
-  color: "#fff", 
-  fontSize: 23, 
-  fontWeight: "bold",
-},
-statLabel: { 
-    fontWeight: "300",   // 얇게
-  color: "#fff", 
-  fontSize: 12,
-  marginRight: 8
-},
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 5,
+  },
+  statValue: { 
+    color: "#fff", 
+    fontSize: 23, 
+    fontWeight: "bold",
+  },
+  statLabel: { 
+    fontWeight: "300",
+    color: "#fff", 
+    fontSize: 12,
+    marginRight: 8
+  },
 
-    highlightList: { paddingLeft: 10, marginTop: 10 },
+  highlightList: { paddingLeft: 10, marginTop: 10 },
 
   highlightCard: {
     width: 200,
@@ -272,5 +285,5 @@ statLabel: {
     marginTop: 5,
     textAlign: "center",
   },
-  sectionTitle: { color: "#fff", fontSize: 18, marginTop: 5, marginLeft: 10, marginBottom:10 },
+  sectionTitle: { color: "#fff", fontSize: 18, marginTop: 5, marginLeft: 10, marginBottom: 10 },
 };
