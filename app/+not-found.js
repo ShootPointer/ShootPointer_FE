@@ -6,7 +6,7 @@ import { ThemedView } from '../components/themed-view';
 export default function NotFoundScreen() {
   return (
     <>
-      <Stack.Screen options={{ title: '404' }} />
+      <Stack.Screen options={{ headerShown: false }} />
       <ThemedView style={styles.container}>
         {/* 중앙 이미지 */}
         <Image
@@ -35,8 +35,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   image: {
-    width: 150,
-    height: 150,
+    width: 245,
+    height: 375,
     marginBottom: 30,
   },
   title: {

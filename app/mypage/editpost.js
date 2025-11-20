@@ -1,4 +1,3 @@
-// app/EditPostScreen.js
 import React, { useState } from "react";
 import {
   View,
@@ -10,42 +9,50 @@ import {
   Alert,
   KeyboardAvoidingView,
   ScrollView,
-  Platform,
   TouchableWithoutFeedback,
   Keyboard,
 } from "react-native";
 import { useLocalSearchParams, useRouter, Stack } from "expo-router";
+import { Video } from "expo-av";
+import api from "../api/api"; // API instance
 
 export default function EditPostScreen() {
   const router = useRouter();
-  const { postId, title, description, hashTag, media, type } =
-    useLocalSearchParams();
+  const { postId, title, content, hashTag, media, type } = useLocalSearchParams();
 
   const [editTitle, setEditTitle] = useState(title || "");
-  const [editDescription, setEditDescription] = useState(description || "");
+  const [editContent, setEditContent] = useState(content || "");
   const [selectedTag, setSelectedTag] = useState(hashTag || "TWO_POINT");
+const isVideo = media && /\.mp4($|\?)/.test(media);
 
-  // 수정 완료 (API 연결 전)
-  const handleSave = () => {
-    if (!editTitle.trim() || !editDescription.trim()) {
+  // ✅ 수정 완료
+  const handleSave = async () => {
+    if (!editTitle.trim() || !editContent.trim()) {
       Alert.alert("알림", "제목과 내용을 입력해주세요.");
       return;
     }
 
-    Alert.alert("수정 완료", `게시물이 수정되었습니다. (해시태그: #${selectedTag})`, [
-      {
-        text: "확인",
-        onPress: () => router.back(),
-      },
-    ]);
+    try {
+      const response = await api.put(`/api/post/${postId}`, {
+        title: editTitle,
+        content: editContent,
+        hashTag: selectedTag,
+      });
+
+      if (response.status === 200) {
+        Alert.alert("수정 완료", "게시물이 수정되었습니다.", [
+          { text: "확인", onPress: () => router.back() },
+        ]);
+      }
+    } catch (err) {
+      console.error("게시물 수정 실패:", err);
+      Alert.alert("오류", "게시물 수정 중 오류가 발생했습니다.");
+    }
   };
 
   return (
-    <KeyboardAvoidingView
-      style={{ flex: 1, backgroundColor: "#111" }}
-    >
+    <KeyboardAvoidingView style={{ flex: 1, backgroundColor: "#111" }}>
       <Stack.Screen options={{ headerShown: false }} />
-
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
         <ScrollView contentContainerStyle={styles.scrollContainer}>
           {/* 상단 헤더 */}
@@ -62,12 +69,18 @@ export default function EditPostScreen() {
 
           {/* 콘텐츠 영역 */}
           <View style={styles.content}>
+            {/* 이미지/영상 미리보기 */}
             {type === "image" ? (
               <Image source={{ uri: media }} style={styles.media} />
             ) : (
-              <View style={styles.videoBox}>
-                <Text style={{ color: "#aaa" }}>🎬 영상 미리보기</Text>
-              </View>
+              <Video
+                source={{ uri: media }}
+                style={styles.media}
+                useNativeControls
+                isLooping
+                shouldPlay
+                resizeMode="cover"
+              />
             )}
 
             {/* 제목 */}
@@ -84,8 +97,8 @@ export default function EditPostScreen() {
             <Text style={styles.label}>내용</Text>
             <TextInput
               style={[styles.input, styles.textArea]}
-              value={editDescription}
-              onChangeText={setEditDescription}
+              value={editContent}
+              onChangeText={setEditContent}
               placeholder="내용을 입력하세요"
               placeholderTextColor="#666"
               multiline
@@ -147,36 +160,10 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: "#222",
   },
-  backIcon: {
-    width: 24,
-    height: 24,
-    tintColor: "#fff",
-  },
-  headerTitle: {
-    color: "#fff",
-    fontSize: 18,
-    fontWeight: "bold",
-  },
-  content: {
-    paddingHorizontal: 20,
-    marginTop: 20,
-  },
-  media: {
-    width: "100%",
-    height: 200,
-    borderRadius: 12,
-    marginBottom: 20,
-  },
-  videoBox: {
-    width: "100%",
-    height: 200,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: "#333",
-    justifyContent: "center",
-    alignItems: "center",
-    marginBottom: 20,
-  },
+  backIcon: { width: 24, height: 24, tintColor: "#fff" },
+  headerTitle: { color: "#fff", fontSize: 18, fontWeight: "bold" },
+  content: { paddingHorizontal: 20, marginTop: 20 },
+  media: { width: "100%", height: 200, borderRadius: 12, marginBottom: 20 },
   label: { color: "#fff", fontSize: 16, marginBottom: 6 },
   input: {
     backgroundColor: "#222",
@@ -186,10 +173,7 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     marginBottom: 15,
   },
-  textArea: {
-    height: 100,
-    textAlignVertical: "top",
-  },
+  textArea: { height: 100, textAlignVertical: "top" },
   hashTagContainer: {
     flexDirection: "row",
     justifyContent: "center",
@@ -206,17 +190,8 @@ const styles = StyleSheet.create({
   tagText: { color: "#FF6B00" },
   selectedTag: { backgroundColor: "#FF6B00" },
   selectedTagText: { color: "#fff" },
-  buttonContainer: {
-    flexDirection: "row",
-    justifyContent: "center",
-    marginTop: 20,
-  },
-  button: {
-    flex: 1,
-    borderRadius: 8,
-    paddingVertical: 12,
-    alignItems: "center",
-  },
+  buttonContainer: { flexDirection: "row", justifyContent: "center", marginTop: 20 },
+  button: { flex: 1, borderRadius: 8, paddingVertical: 12, alignItems: "center" },
   saveButton: { backgroundColor: "#ff6a33" },
   buttonText: { color: "#fff", fontWeight: "bold", fontSize: 16 },
 });
