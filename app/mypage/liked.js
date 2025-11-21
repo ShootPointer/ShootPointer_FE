@@ -233,7 +233,7 @@ export default function LikedScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#111" },
+  container: { flex: 1, backgroundColor: "#111",marginBottom:50 },
   header: {
     flexDirection: "row",
     alignItems: "center",
