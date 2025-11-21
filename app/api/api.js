@@ -2,13 +2,13 @@ import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const api = axios.create({
-  baseURL: "https://tkv00.ddns.net", // 서버 주소
+  baseURL: "https://tkv00.ddns.net", 
   headers: {
     "Content-Type": "application/json",
   },
 });
 
-// ✅ 요청 인터셉터: Access Token 자동 첨부
+// 요청 인터셉터: Access Token 자동 첨부
 api.interceptors.request.use(
   async (config) => {
     const accessToken = await AsyncStorage.getItem("accessToken");
@@ -20,7 +20,7 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// ✅ 응답 인터셉터: 토큰 만료 시 자동 갱신 처리
+//응답 인터셉터: 토큰 만료 시 자동 갱신 처리
 api.interceptors.response.use(
   (response) => response,
   async (error) => {

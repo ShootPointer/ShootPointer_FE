@@ -1,5 +1,6 @@
 // app/(tabs)/index.js
 import { Ionicons } from "@expo/vector-icons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Video } from "expo-av";
 import { useRouter } from "expo-router";
 import React, { useState, useEffect } from "react";
@@ -85,6 +86,9 @@ export default function HomeScreen() {
           style={styles.highlightImage}
           resizeMode="cover"
           useNativeControls
+          onError={(error) => {
+            console.error("Video Load Error:", error);
+          }}
         />
       )}
       <Text style={styles.highlightTitle}>{item.title}</Text>

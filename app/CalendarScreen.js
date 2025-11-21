@@ -1,31 +1,81 @@
-import React, { useEffect, useState } from "react";
+import { Stack, useRouter } from "expo-router";
+import { useEffect, useState } from "react";
 import {
-  View,
+  Alert,
+  Image,
+  ScrollView,
   StyleSheet,
   Text,
-  Image,
   TouchableOpacity,
-  ScrollView,
+  View,
 } from "react-native";
 import { Calendar } from "react-native-calendars";
-import { useRouter, Stack } from "expo-router";
+import api from "./api/api";
 
 export default function HighlightCalendar() {
+  //오늘 날짜 초기값
+  let today = new Date();
+  let initYear = today.getFullYear();
+  let initMonth = today.getMonth() + 1;
+
   const router = useRouter();
   const [marked, setMarked] = useState({});
-  const [highlightData, setHighlightData] = useState({}); // 더미 확인용 상태
+  const [month, setMonth] = useState(initMonth);
+  const [year, setYear] = useState(initYear);
+  const [loading, setLoading] = useState(false);
+  const [data, setData] = useState([]);
+
+  //초기 API 호출
+  useEffect(() => {
+    fetchCalendarData({ year, month });
+  }, []);
+
+  /*
+   * 캘린더 데이터 호출
+   */
+  const fetchCalendarData = async ({ year, month }) => {
+    setLoading(true);
+    try {
+      const response = await api.get(
+        `api/highlight/calendar?year=${year}&month=${month}`
+      );
+
+      console.log(" 캘린더 데이터 응답:", response.data);
+
+      //조회 성공
+      if (response.data.status === "OK" && response.data.success) {
+        console.log("조회 성공 시 데이터 : " + response.data.data.days);
+        setData(response.data.data.days || []);
+      }
+      //에러 메시지 반환
+      else if (!response.data.success) {
+        Alert.alert(response.data.error.message || "데이터가 없습니다.");
+      }
+      //나머지 오류 처리
+    } catch (error) {
+      console.error("캘린더 데이터 불러오기 오류:", error);
+      Alert.alert("오류", "서버와 연결할 수 없습니다.", [
+        {
+          text: "새로고침",
+          onPress: () => fetchCalendarData({ year, month }), // 다시 API 재요청
+        },
+        { text: "닫기", style: "cancel" },
+      ]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const dummyData = {
-      "2025-11-08": { count: 2 },
-      "2025-11-10": { count: 5 },
-      "2025-11-15": { count: 1 },
-    };
-    setHighlightData(dummyData);
+    if (!data || data.length === 0) {
+      return;
+    }
 
     const newMarked = {};
-    Object.keys(dummyData).forEach((date) => {
-      const count = dummyData[date]?.count || 0;
+
+    data.forEach((day) => {
+      const date = day.date;
+      const count = day.count; //데이터 개수
 
       let color = "#fdc192ff"; // 1개
       if (count >= 2 && count <= 3) color = "#ffa057ff"; // 2~3개
@@ -38,14 +88,26 @@ export default function HighlightCalendar() {
         selectedTextColor: "#fff",
       };
     });
-
     setMarked(newMarked);
-  }, []);
+  }, [data]);
 
+  /*
+   * 날짜 클릭 시 하이라이트 카드 모달 이동
+   */
   const handleDayPress = (day) => {
+    const target = data.find((d) => d.date === day.dateString);
+
+    if (!target || !target.highlights || target.highlights.length === 0) {
+      return;
+    }
     router.push({
-      pathname: "/HighlightScreen",
-      params: { date: day.dateString },
+      pathname: "/HighlightCardModal",
+      params: {
+        post: "true",
+        highlights: JSON.stringify(
+          data.find((d) => d.date === day.dateString)?.highlights || []
+        ),
+      },
     });
   };
 
@@ -62,7 +124,7 @@ export default function HighlightCalendar() {
       style={styles.container}
       contentContainerStyle={{ flexGrow: 1 }}
     >
-    <Stack.Screen options={{ headerShown: false }} />
+      <Stack.Screen options={{ headerShown: false }} />
       {/* 상단 뒤로가기 버튼 */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()}>
@@ -79,6 +141,12 @@ export default function HighlightCalendar() {
           markedDates={marked}
           onDayPress={handleDayPress}
           style={styles.calendar}
+          onMonthChange={(newDate) => {
+            setYear(newDate.year);
+            setMonth(newDate.month);
+
+            fetchCalendarData({ year: newDate.year, month: newDate.month });
+          }}
           theme={{
             backgroundColor: "#1A1A1A",
             calendarBackground: "#1A1A1A",
@@ -142,7 +210,7 @@ const styles = StyleSheet.create({
   },
   calendar: {
     width: 350,
-    height:400,
+    height: 400,
     borderRadius: 16,
   },
   legendContainer: {

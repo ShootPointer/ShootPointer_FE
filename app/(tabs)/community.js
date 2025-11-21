@@ -1,21 +1,20 @@
 // CommunityScreen.js
-import React, { useState, useEffect } from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  FlatList,
-  TouchableOpacity,
-  Image,
-  ActivityIndicator,
-  TextInput,
-  Alert,
-} from "react-native";
-import { Video } from "expo-av";
 import { useNavigation } from "@react-navigation/native";
-import { likePost, unlikePost } from "../api/api";
-import api from "../api/api";
+import { Video } from "expo-av";
 import { useRouter } from "expo-router";
+import React, { useEffect, useState } from "react";
+import {
+  ActivityIndicator,
+  Alert,
+  FlatList,
+  Image,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import api, { likePost, unlikePost } from "../api/api";
 
 export default function CommunityScreen() {
   const navigation = useNavigation();
@@ -79,11 +78,10 @@ export default function CommunityScreen() {
   };
 
   useEffect(() => {
-  setLastPostId(null);
-  setHasMore(true);
-  fetchPosts(false);
-}, [sortType]);
-
+    setLastPostId(null);
+    setHasMore(true);
+    fetchPosts(false);
+  }, [sortType]);
 
   const handleLoadMore = () => fetchPosts(true);
 
@@ -109,7 +107,6 @@ export default function CommunityScreen() {
       console.error("좋아요 처리 오류:", err);
     }
   };
-
 
   // 검색 제안
   const handleSearchChange = async (text) => {
@@ -202,7 +199,9 @@ export default function CommunityScreen() {
         )}
 
         <Text style={styles.description}>{item.description}</Text>
-        {item.hashTag ? <Text style={styles.hashtag}>{item.hashTag}</Text> : null}
+        {item.hashTag ? (
+          <Text style={styles.hashtag}>{item.hashTag}</Text>
+        ) : null}
 
         <View style={styles.bottomActions}>
           <View style={styles.leftActions}>
@@ -238,7 +237,9 @@ export default function CommunityScreen() {
 
             <TouchableOpacity
               style={styles.iconButton}
-              onPress={() => Alert.alert("공유", "이 게시물의 링크를 복사했습니다!")}
+              onPress={() =>
+                Alert.alert("공유", "이 게시물의 링크를 복사했습니다!")
+              }
             >
               <Image
                 source={require("../../assets/images/Send.png")}
@@ -296,28 +297,33 @@ export default function CommunityScreen() {
         {/* 최신순 / 인기순 버튼 */}
         {!searchVisible && (
           <View style={styles.sortContainer}>
-<TouchableOpacity
-  style={[styles.sortButton, sortType === "latest" && styles.sortButtonActive]}
-  onPress={() => {
-    setSortType("latest");
-    setLastPostId(null);
-    setHasMore(true);
-  }}
->
-  <Text style={styles.sortText}>최신순</Text>
-</TouchableOpacity>
+            <TouchableOpacity
+              style={[
+                styles.sortButton,
+                sortType === "latest" && styles.sortButtonActive,
+              ]}
+              onPress={() => {
+                setSortType("latest");
+                setLastPostId(null);
+                setHasMore(true);
+              }}
+            >
+              <Text style={styles.sortText}>최신순</Text>
+            </TouchableOpacity>
 
-<TouchableOpacity
-  style={[styles.sortButton, sortType === "popular" && styles.sortButtonActive]}
-  onPress={() => {
-    setSortType("popular");
-    setLastPostId(null);
-    setHasMore(true);
-  }}
->
-  <Text style={styles.sortText}>인기순</Text>
-</TouchableOpacity>
-
+            <TouchableOpacity
+              style={[
+                styles.sortButton,
+                sortType === "popular" && styles.sortButtonActive,
+              ]}
+              onPress={() => {
+                setSortType("popular");
+                setLastPostId(null);
+                setHasMore(true);
+              }}
+            >
+              <Text style={styles.sortText}>인기순</Text>
+            </TouchableOpacity>
           </View>
         )}
       </View>
@@ -362,7 +368,9 @@ export default function CommunityScreen() {
       {!searchVisible && (
         <TouchableOpacity
           style={styles.fab}
-          onPress={() => navigation.navigate("WriteScreen", { posts, setPosts })}
+          onPress={() =>
+            navigation.navigate("WriteScreen", { posts, setPosts })
+          }
         >
           <Text style={styles.fabText}>＋</Text>
         </TouchableOpacity>
@@ -373,7 +381,12 @@ export default function CommunityScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#111", padding: 15 },
-  post: { padding: 15, backgroundColor: "#000", borderRadius: 12, marginTop: 20 },
+  post: {
+    padding: 15,
+    backgroundColor: "#000",
+    borderRadius: 12,
+    marginTop: 20,
+  },
   title: { fontWeight: "bold", color: "#fff", fontSize: 16, marginBottom: 5 },
   author: { fontWeight: "bold", color: "#fff", marginBottom: 5 },
   media: { width: "100%", height: 200, borderRadius: 10, marginBottom: 10 },
@@ -431,12 +444,13 @@ const styles = StyleSheet.create({
     borderBottomWidth: 0.5,
     borderBottomColor: "#444",
   },
-  sortContainer: { flexDirection: "row", marginLeft: 10 },
+  sortContainer: { flexDirection: "row", padding: 5 },
   sortButton: {
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 10,
     backgroundColor: "#333",
+    margin: 3,
   },
   sortButtonActive: {
     backgroundColor: "#ff6a33",

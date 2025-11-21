@@ -1,15 +1,14 @@
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
   DarkTheme,
   DefaultTheme,
   ThemeProvider,
 } from "@react-navigation/native";
 import { useFonts } from "expo-font";
-import { Stack, useRouter, useSegments, usePathname } from "expo-router";
+import { Stack, usePathname, useRouter, useSegments } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import React, { useEffect, useState } from "react";
-import { useColorScheme } from "../hooks/use-color-scheme";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { Text, View } from "react-native";
+import { Text, useColorScheme, View } from "react-native";
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
@@ -85,12 +84,12 @@ export default function RootLayout() {
     // 비로그인 + 보호된 페이지 접근 -> 로그인으로
     if (!isAuthenticated && !inAuthGroup) {
       console.log("➡️ 로그인 필요 -> /login 이동");
-      setTimeout(() => router.replace("/login"), 50);
+      setTimeout(() => router.replace("/login"), 500);
     } 
     // 로그인됨 + 인증 화면 -> 홈으로
     else if (isAuthenticated && inAuthGroup) {
       console.log("➡️ 이미 로그인됨 -> /(tabs) 이동");
-      setTimeout(() => router.replace("/(tabs)"), 50);
+      setTimeout(() => router.replace("/(tabs)"), 500);
     } else {
       console.log("✅ 현재 위치 유지");
     }
@@ -120,7 +119,8 @@ export default function RootLayout() {
             headerTintColor: "#fff",
           }}
         />
-        <Stack.Screen name="+not-found" />
+        <Stack.Screen name="HighlightCardModal" options={{ headerShown: false }}/>
+        <Stack.Screen name="not-found" />
         <Stack.Screen name="login" options={{ headerShown: false }} />
         <Stack.Screen name="settings" options={{ headerShown: false }} />
         <Stack.Screen name="kakaowebview" options={{ headerShown: false }} />

@@ -62,7 +62,7 @@ const pickImageFromGallery = async () => {
     let image = result.assets[0];
 
     // PNG이면 JPEG로 변환
-    if (image.uri.endsWith(".png") || image.type === "image/png") {
+    /*if (image.uri.endsWith(".png") || image.type === "image/png") {
       const manipulated = await ImageManipulator.manipulateAsync(
         image.uri,
         [], // 변형 없음
@@ -70,7 +70,7 @@ const pickImageFromGallery = async () => {
       );
       image = { ...image, uri: manipulated.uri, type: "image/jpeg", fileName: image.fileName.replace(".png", ".jpg") };
     }
-
+*/
     setFrontImage(image);
     setStep("upload");
   }
@@ -135,7 +135,7 @@ const pickImageFromGallery = async () => {
         <Text style={styles.buttonText}>사진 촬영하기</Text>
       </TouchableOpacity>
 
-      {/* 🖼 사진 선택하기 */}
+      {/* 사진 선택하기 */}
       <TouchableOpacity
         style={[
           styles.captureButton,
@@ -279,18 +279,5 @@ const styles = StyleSheet.create({
     borderRadius: 30,
     backgroundColor: "#ff6a33",
   },
-  buttonContainer: { 
-  width: "100%", 
-  marginBottom: 20 
-},
-captureButton: {
-  paddingVertical: 15,
-  borderRadius: 12,
-  alignItems: "center",
-  marginBottom: 12,
-  backgroundColor: "#ff6a33",
-  alignSelf: "center",
-  width: "90%",
-},
 
 });

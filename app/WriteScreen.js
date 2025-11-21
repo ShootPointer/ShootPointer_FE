@@ -1,20 +1,20 @@
-import React, { useState, useEffect } from "react";
-import { Stack } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
+import { ResizeMode, Video } from "expo-av";
+import { Stack, useLocalSearchParams, useRouter } from "expo-router";
+import React, { useEffect, useState } from "react";
 import {
-  View,
+  Alert,
+  Keyboard,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
-  StyleSheet,
-  Keyboard,
-  KeyboardAvoidingView,
   TouchableWithoutFeedback,
-  Platform,
-  ScrollView,
-  Image,
-  Alert,
+  View,
 } from "react-native";
-import { useRouter, useLocalSearchParams } from "expo-router";
 import api from "./api/api";
 
 export default function WriteScreen() {
@@ -25,8 +25,14 @@ export default function WriteScreen() {
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [hashTag, setHashTag] = useState("TWO_POINT");
+  const [isPlaying, setIsPlaying] = useState(false);
+  const videoRef = React.useRef(null);
 
-  // ✅ 더미 하이라이트 (임시 테스트용)
+  const TAG_OPTIONS = [
+    { label: "2점슛", value: "TWO_POINT" },
+    { label: "3점슛", value: "THREE_POINT" },
+  ];
+
   useEffect(() => {
     if (selectedHighlight) {
       try {
@@ -34,19 +40,11 @@ export default function WriteScreen() {
       } catch (e) {
         console.error("하이라이트 파싱 오류:", e);
       }
-    } else {
-      // ✅ 하이라이트가 없을 때 더미값 자동 지정
-      setHighlight({
-        highlightId: 999,
-        thumbnailUrl: "https://picsum.photos/400/300", // 테스트용 이미지
-        highlightUrl: "https://picsum.photos/400/300",
-      });
     }
   }, [selectedHighlight]);
 
   const handlePost = async () => {
-    if (!highlight)
-      return Alert.alert("오류", "하이라이트를 선택해주세요!");
+    if (!highlight) return Alert.alert("오류", "하이라이트를 선택해주세요!");
     if (!title.trim() || !content.trim())
       return Alert.alert("입력 오류", "제목과 내용을 모두 입력해주세요.");
 
@@ -57,7 +55,10 @@ export default function WriteScreen() {
         content,
         hashTag,
       };
+      console.log(body);
       const response = await api.post("/api/post", body);
+      console.log(response);
+
       if (response.data?.success) {
         Alert.alert("성공", "게시글이 등록되었습니다!");
         router.push("/community");
@@ -68,88 +69,124 @@ export default function WriteScreen() {
     }
   };
 
+  const togglePlay = async () => {
+    if (videoRef.current) {
+      try {
+        if (isPlaying) {
+          await videoRef.current.pauseAsync();
+        } else {
+          await videoRef.current.playAsync();
+        }
+        setIsPlaying(!isPlaying);
+      } catch (error) {
+        console.log("Video playback error:", error);
+      }
+    }
+  };
+
   return (
     <>
-    <Stack.Screen options={{ headerShown: false }} />
-    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-      <KeyboardAvoidingView
-        style={styles.container}
+      <Stack.Screen options={{ headerShown: false }} />
+      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+        <KeyboardAvoidingView style={styles.container}>
+          <ScrollView
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={{ paddingBottom: 40 }}
+            keyboardShouldPersistTaps="handled"
+          >
+            {/* 헤더 */}
+            <View style={styles.header}>
+              <TouchableOpacity onPress={() => router.back()}>
+                <Text style={styles.closeText}>✕</Text>
+              </TouchableOpacity>
+              <Text style={styles.headerTitle}>새 게시물</Text>
+              <View style={{ width: 20 }} />
+            </View>
 
-      >
-        <ScrollView
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={{ paddingBottom: 40 }}
-          keyboardShouldPersistTaps="handled"
-        >
-          {/* 헤더 */}
-          <View style={styles.header}>
-            <TouchableOpacity onPress={() => router.back()}>
-              <Text style={styles.closeText}>✕</Text>
-            </TouchableOpacity>
-            <Text style={styles.headerTitle}>새 게시물</Text>
-            <View style={{ width: 20 }} />
-          </View>
-
-          {/* 하이라이트 이미지 */}
+            {/* 하이라이트 이미지 */}
             <TouchableOpacity
               style={styles.selectButton}
               onPress={() => router.push("/CalendarScreen")}
             >
               <Text style={styles.buttonText}>하이라이트 선택하기</Text>
             </TouchableOpacity>
-          
 
-          {/* 제목 */}
-          <TextInput
-            placeholder="제목을 입력하세요"
-            placeholderTextColor="#999"
-            style={styles.input}
-            value={title}
-            onChangeText={setTitle}
-          />
-
-          {/* 내용 */}
-          <TextInput
-            placeholder="내용을 입력하세요"
-            placeholderTextColor="#999"
-            style={[styles.input, { height: 120 }]}
-            value={content}
-            onChangeText={setContent}
-            multiline
-          />
-
-          {/* 해시태그 */}
-          <View style={styles.hashTagContainer}>
-            {["TWO_POINT", "THREE_POINT"].map((tag) => (
+            {/* 비디오 미리보기 */}
+            {highlight && (
               <TouchableOpacity
-                key={tag}
-                style={[
-                  styles.tagButton,
-                  hashTag === tag && styles.selectedTag,
-                ]}
-                onPress={() => setHashTag(tag)}
+                activeOpacity={1}
+                onPress={togglePlay}
+                style={{ position: "relative" }}
               >
-                <Text
-                  style={[
-                    styles.tagText,
-                    hashTag === tag && styles.selectedTagText,
-                  ]}
-                >
-                  #{tag}
-                </Text>
+                <Video
+                  ref={videoRef}
+                  source={{ uri: highlight.highlightUrl }}
+                  style={styles.video}
+                  resizeMode={ResizeMode.COVER}
+                  shouldPlay={isPlaying}
+                  isLooping={false}
+                />
+                {!isPlaying && (
+                  <View style={styles.playOverlay}>
+                    <View style={styles.playButton}>
+                      <Ionicons name="play" size={40} color="#ff6600" />
+                    </View>
+                  </View>
+                )}
               </TouchableOpacity>
-            ))}
-          </View>
-        </ScrollView>
+            )}
 
-        {/* ✅ 하단 버튼이 키보드 위로 따라 올라감 */}
-        <View style={styles.footer}>
-          <TouchableOpacity style={styles.postButton} onPress={handlePost}>
-            <Text style={styles.postButtonText}>게시하기</Text>
-          </TouchableOpacity>
-        </View>
-      </KeyboardAvoidingView>
-    </TouchableWithoutFeedback>
+            {/* 제목 */}
+            <TextInput
+              placeholder="제목을 입력하세요"
+              placeholderTextColor="#999"
+              style={styles.input}
+              value={title}
+              onChangeText={setTitle}
+            />
+
+            {/* 내용 */}
+            <TextInput
+              placeholder="내용을 입력하세요"
+              placeholderTextColor="#999"
+              style={[styles.input, { height: 120 }]}
+              value={content}
+              onChangeText={setContent}
+              multiline
+            />
+
+            {/* 해시태그 */}
+            <View style={styles.hashTagContainer}>
+              {TAG_OPTIONS.map((tag) => (
+                <TouchableOpacity
+                  key={tag.value}
+                  style={[
+                    styles.tagButton,
+                    hashTag === tag.value && styles.selectedTag,
+                  ]}
+                  onPress={() => setHashTag(tag.value)}
+                >
+                  <Text
+                    style={[
+                      styles.tagText,
+                      hashTag === tag.value && styles.selectedTagText,
+                    ]}
+                  >
+                    #{tag.label}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </ScrollView>
+
+          {/* ✅ 하단 버튼이 키보드 위로 따라 올라감 */}
+          <View style={styles.footer}>
+            <TouchableOpacity style={styles.postButton} onPress={handlePost}>
+              <Text style={styles.postButtonText}>게시하기</Text>
+            </TouchableOpacity>
+          </View>
+        </KeyboardAvoidingView>
+      </TouchableWithoutFeedback>
     </>
   );
 }
@@ -216,7 +253,32 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     borderRadius: 10,
     alignItems: "center",
-    marginBottom:50,
+    marginBottom: 50,
   },
   postButtonText: { color: "#fff", fontWeight: "bold", fontSize: 16 },
+  video: {
+    width: "100%",
+    height: 200,
+    borderRadius: 12,
+    backgroundColor: "#000",
+    marginBottom: 20,
+  },
+  playOverlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "rgba(0,0,0,0.3)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  playButton: {
+    backgroundColor: "rgba(255,255,255,0.9)",
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    justifyContent: "center",
+    alignItems: "center",
+  },
 });

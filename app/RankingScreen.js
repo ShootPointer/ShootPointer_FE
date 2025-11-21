@@ -1,13 +1,14 @@
-import React, { useState, useEffect } from "react";
+import { Stack, useRouter } from "expo-router";
+import { useEffect, useState } from "react";
 import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  FlatList,
-  Image,
   ActivityIndicator,
   Alert,
+  FlatList,
+  Image,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import api from "./api/api";
 import { Stack, useRouter } from "expo-router";
@@ -26,9 +27,7 @@ const RankingScreen = () => {
     setLoading(true);
     try {
       const url =
-        type === "weekly"
-          ? "/api/rank/this-week"
-          : "/api/rank/this-month";
+        type === "weekly" ? "/api/rank/this-week" : "/api/rank/this-month";
 
       const response = await api.get(url);
       console.log("📥 서버 응답:", response.data);
@@ -37,7 +36,10 @@ const RankingScreen = () => {
         setRankData(response.data.data.rankingList);
       } else {
         setRankData([]);
-        Alert.alert("불러오기 실패", response.data.message || "데이터가 없습니다.");
+        Alert.alert(
+          "불러오기 실패",
+          response.data.message || "데이터가 없습니다."
+        );
       }
     } catch (error) {
       console.error("❌ 랭킹 불러오기 오류:", error);
@@ -159,7 +161,11 @@ const RankingScreen = () => {
 
       {/* 리스트 영역 + 헤더 표시 */}
       {loading ? (
-        <ActivityIndicator size="large" color="#ff6600" style={{ marginTop: 40 }} />
+        <ActivityIndicator
+          size="large"
+          color="#ff6600"
+          style={{ marginTop: 40 }}
+        />
       ) : rankData.length === 0 ? (
         <Text style={styles.noData}>랭킹 데이터가 없습니다 😥</Text>
       ) : (
