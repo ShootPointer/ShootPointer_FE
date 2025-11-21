@@ -15,7 +15,6 @@ import {
   ActivityIndicator,
 } from "react-native";
 import api from "../api/api";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export default function HomeScreen() {
   const [highlights, setHighlights] = useState([]);

@@ -11,7 +11,6 @@ import {
   View,
 } from "react-native";
 import api from "./api/api";
-import { Stack, useRouter } from "expo-router";
 
 const RankingScreen = () => {
   const router = useRouter();
