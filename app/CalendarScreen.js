@@ -40,12 +40,15 @@ export default function HighlightCalendar() {
         `api/highlight/calendar?year=${year}&month=${month}`
       );
 
+      console.log(" 캘린더 데이터 응답:", response.data);
+
       //조회 성공
-      if (response.data.status === 200 && response.data.success) {
-        setData(api.data.days || []);
+      if (response.data.status === "OK" && response.data.success) {
+        console.log("조회 성공 시 데이터 : " + response.data.data.days);
+        setData(response.data.data.days || []);
       }
       //에러 메시지 반환
-      else if (response.data.status === 200 && !response.data.success) {
+      else if (!response.data.success) {
         Alert.alert(response.data.error.message || "데이터가 없습니다.");
       }
       //나머지 오류 처리

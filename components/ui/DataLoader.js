@@ -90,7 +90,7 @@ const DataLoader = ({ type, progress }) => {
             <MotiView
               key={i}
               from={{ translateY: 0, opacity: 0.3 }}
-              animate={{ translateY: -8, opacity: 1 }}
+              animate={{ translateY: -1, opacity: 1 }}
               transition={{
                 type: "timing",
                 duration: 400,
@@ -115,8 +115,8 @@ const DataLoader = ({ type, progress }) => {
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
-    backgroundColor: "#000",
+    flex: 4,
+    backgroundColor: "#111",
     alignItems: "center",
     justifyContent: "center",
   },

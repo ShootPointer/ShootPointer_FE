@@ -10,7 +10,7 @@ import {
   View,
 } from "react-native";
 import * as ImageManipulator from "expo-image-manipulator";
-//import * as ImagePicker from "expo-image-picker";
+import * as ImagePicker from "expo-image-picker";
 import FrontendUpload from "../FrontendUpload";
 import AgreeModal from "../agreeModal";
 export default function CaptureScreen() {
@@ -135,7 +135,7 @@ const pickImageFromGallery = async () => {
         <Text style={styles.buttonText}>사진 촬영하기</Text>
       </TouchableOpacity>
 
-      {/* 🖼 사진 선택하기 */}
+      {/* 사진 선택하기 */}
       <TouchableOpacity
         style={[
           styles.captureButton,

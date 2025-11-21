@@ -84,12 +84,12 @@ export default function RootLayout() {
     // 비로그인 + 보호된 페이지 접근 -> 로그인으로
     if (!isAuthenticated && !inAuthGroup) {
       console.log("➡️ 로그인 필요 -> /login 이동");
-      setTimeout(() => router.replace("/login"), 50);
+      setTimeout(() => router.replace("/login"), 500);
     } 
     // 로그인됨 + 인증 화면 -> 홈으로
     else if (isAuthenticated && inAuthGroup) {
       console.log("➡️ 이미 로그인됨 -> /(tabs) 이동");
-      setTimeout(() => router.replace("/(tabs)"), 50);
+      setTimeout(() => router.replace("/(tabs)"), 500);
     } else {
       console.log("✅ 현재 위치 유지");
     }

@@ -10,9 +10,6 @@ import {
   View,
 } from "react-native";
 
-/*
-post : Boolean = true 이면 하이라이트 선택 가능 + "하이라이트 영상을 선택해주세요."메세지 띄우기.
-*/
 export default function HighlightCardModal() {
   const router = useRouter();
   const { post, highlights } = useLocalSearchParams();
@@ -22,12 +19,15 @@ export default function HighlightCardModal() {
   const [isPlaying, setIsPlaying] = useState(false);
   const videoRef = useRef(null);
 
+  // 이전 인덱스 추적
+  const prevIndexRef = useRef(currentIndex);
+
   if (!highlightList || highlightList.length === 0) {
     return (
       <>
         <Stack.Screen options={{ headerShown: false }} />
         <View style={styles.container}>
-          {post ? (
+          {post === "false" ? (
             <View style={styles.header}>
               <TouchableOpacity onPress={() => router.back()}>
                 <Ionicons name="close" size={28} color="#fff" />
@@ -49,12 +49,21 @@ export default function HighlightCardModal() {
   }
 
   const currentHighlight = highlightList[currentIndex];
+  console.log("현재 하이라이트:", currentHighlight);
 
-  // 인덱스 변경 시 비디오 정지
+  // 인덱스 변경 시 비디오 처리 (같은 인덱스 클릭 시 무시)
   useEffect(() => {
+    if (prevIndexRef.current === currentIndex) {
+      return;
+    }
+
+    prevIndexRef.current = currentIndex;
     setIsPlaying(false);
+
     if (videoRef.current) {
-      videoRef.current.stopAsync().catch(() => {});
+      // stopAsync 대신 pauseAsync + setPositionAsync 사용 (검정화면 방지)
+      videoRef.current.pauseAsync().catch(() => {});
+      videoRef.current.setPositionAsync(0).catch(() => {});
     }
   }, [currentIndex]);
 
@@ -85,9 +94,6 @@ export default function HighlightCardModal() {
     }
   };
 
-  /*
-   * 하이라이트 영상 선택
-   */
   const selectHighlight = () => {
     router.push({
       pathname: "/WriteScreen",
@@ -97,32 +103,41 @@ export default function HighlightCardModal() {
     });
   };
 
+  // 썸네일 클릭 핸들러
+  const handleThumbnailPress = (index) => {
+    if (index === currentIndex) {
+      // 같은 썸네일 클릭 시 재생/일시정지 토글
+      togglePlay();
+    } else {
+      // 다른 썸네일 클릭 시 인덱스 변경
+      setCurrentIndex(index);
+    }
+  };
+
   return (
     <>
       <Stack.Screen options={{ headerShown: false }} />
       <View style={styles.container}>
-        {/* 헤더 */}
         <View style={styles.header}>
           <TouchableOpacity onPress={() => router.back()}>
             <Ionicons name="close" size={28} color="#fff" />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>{post ? "하이라이트 선택" : "하이라이트 미리보기"}</Text>
+          <Text style={styles.headerTitle}>
+            {post === "true" ? "하이라이트 선택" : "하이라이트 미리보기"}
+          </Text>
           <View style={{ width: 28 }} />
         </View>
         <ScrollView
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.scrollContent}
         >
-          {/* 타이틀 */}
           <View style={styles.titleContainer}>
             <Text style={styles.title}>🎬 하이라이트 모음</Text>
             <Text style={styles.subtitle}>최고의 순간들을 만나보세요</Text>
           </View>
 
-          {/* 메인 비디오 카드 */}
           <View style={styles.cardContainer}>
             <View style={styles.card}>
-              {/* 비디오 영역 */}
               <View style={styles.videoContainer}>
                 {currentHighlight?.highlightUrl ? (
                   <Video
@@ -137,6 +152,9 @@ export default function HighlightCardModal() {
                         setIsPlaying(false);
                       }
                     }}
+                    onError={(e) => {
+                      console.log("Video ERROR:", e);
+                    }}
                   />
                 ) : (
                   <View style={styles.videoPlaceholder}>
@@ -146,7 +164,6 @@ export default function HighlightCardModal() {
                   </View>
                 )}
 
-                {/* 재생 버튼 오버레이 */}
                 {!isPlaying && currentHighlight?.highlightUrl && (
                   <TouchableOpacity
                     style={styles.playOverlay}
@@ -159,7 +176,6 @@ export default function HighlightCardModal() {
                   </TouchableOpacity>
                 )}
 
-                {/* 좌우 네비게이션 */}
                 <TouchableOpacity
                   style={[styles.navButton, styles.navLeft]}
                   onPress={handlePrevious}
@@ -174,14 +190,12 @@ export default function HighlightCardModal() {
                   <Ionicons name="chevron-forward" size={24} color="#fff" />
                 </TouchableOpacity>
 
-                {/* 인덱스 표시 */}
                 <View style={styles.indexBadge}>
                   <Text style={styles.indexText}>
                     {currentIndex + 1} / {highlightList.length}
                   </Text>
                 </View>
 
-                {/* 블로킹 배지 */}
                 {currentHighlight?.blocking && (
                   <View style={styles.blockBadge}>
                     <Text style={styles.blockText}>🛡️ BLOCK</Text>
@@ -189,20 +203,18 @@ export default function HighlightCardModal() {
                 )}
               </View>
 
-              {/* 정보 영역 */}
               <View style={styles.infoContainer}>
                 <Text style={styles.highlightTitle}>
                   하이라이트 #{currentIndex + 1}
                 </Text>
 
-                {/* 점수 통계 */}
                 <View style={styles.statsContainer}>
                   <View
                     style={[styles.statBox, { backgroundColor: "#ff880020" }]}
                   >
                     <Text style={styles.statLabel}>2점슛</Text>
                     <Text style={styles.statValue}>
-                      {currentHighlight?.totalTwoPoint || 0}개
+                      {currentHighlight?.totalTwoPoint || 0}점
                     </Text>
                   </View>
                   <View
@@ -210,12 +222,11 @@ export default function HighlightCardModal() {
                   >
                     <Text style={styles.statLabel}>3점슛</Text>
                     <Text style={styles.statValue}>
-                      {currentHighlight?.totalThreePoint || 0}개
+                      {currentHighlight?.totalThreePoint || 0}점
                     </Text>
                   </View>
                 </View>
 
-                {/* 진행 바 */}
                 <View style={styles.progressContainer}>
                   {highlightList.map((_, index) => (
                     <View
@@ -233,38 +244,68 @@ export default function HighlightCardModal() {
 
           {/* 썸네일 미리보기 */}
           <View style={styles.thumbnailContainer}>
-            {highlightList.map((highlight, index) => (
-              <TouchableOpacity
-                key={highlight.highlightId}
-                style={[
-                  styles.thumbnail,
-                  index === currentIndex && styles.thumbnailActive,
-                ]}
-                onPress={() => setCurrentIndex(index)}
-              >
-                <View style={styles.thumbnailContent}>
-                  <Ionicons name="videocam" size={20} color="#fff" />
-                  <Text style={styles.thumbnailNumber}>#{index + 1}</Text>
-                </View>
-                {highlight.blocking && (
-                  <View style={styles.thumbnailBadge}>
-                    <Text style={styles.thumbnailBadgeText}>🛡️</Text>
+            {highlightList.map((highlight, index) => {
+              const isActive = index === currentIndex;
+              return (
+                <TouchableOpacity
+                  key={highlight.highlightId}
+                  style={[styles.thumbnail, isActive && styles.thumbnailActive]}
+                  onPress={() => handleThumbnailPress(index)}
+                >
+                  <View
+                    style={[
+                      styles.thumbnailContent,
+                      !isActive && styles.thumbnailContentInactive,
+                    ]}
+                  >
+                    <Ionicons
+                      name="videocam"
+                      size={20}
+                      color={isActive ? "#fff" : "#ffffff80"}
+                    />
+                    <Text
+                      style={[
+                        styles.thumbnailNumber,
+                        !isActive && styles.thumbnailNumberInactive,
+                      ]}
+                    >
+                      #{index + 1}
+                    </Text>
                   </View>
-                )}
-                <View style={styles.thumbnailScore}>
-                  <Text style={styles.thumbnailScoreText}>
-                    {(highlight?.totalThreePoint || 0) * 3 +
-                      (highlight?.totalTwoPoint || 0) * 2}
-                    점
-                  </Text>
-                </View>
-              </TouchableOpacity>
-            ))}
+                  {highlight.blocking && (
+                    <View
+                      style={[
+                        styles.thumbnailBadge,
+                        !isActive && styles.thumbnailBadgeInactive,
+                      ]}
+                    >
+                      <Text style={styles.thumbnailBadgeText}>🛡️</Text>
+                    </View>
+                  )}
+                  <View
+                    style={[
+                      styles.thumbnailScore,
+                      !isActive && styles.thumbnailScoreInactive,
+                    ]}
+                  >
+                    <Text
+                      style={[
+                        styles.thumbnailScoreText,
+                        !isActive && styles.thumbnailScoreTextInactive,
+                      ]}
+                    >
+                      {(highlight?.totalThreePoint || 0) +
+                        (highlight?.totalTwoPoint || 0)}
+                      점
+                    </Text>
+                  </View>
+                </TouchableOpacity>
+              );
+            })}
           </View>
         </ScrollView>
 
-        {/* 선택 버튼 */}
-        {post ? (
+        {post === "true" ? (
           <View style={styles.footer}>
             <TouchableOpacity
               style={styles.selectButton}
@@ -424,11 +465,6 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     color: "#fff",
   },
-  idText: {
-    fontSize: 12,
-    color: "#ff8833",
-    marginBottom: 16,
-  },
   progressContainer: {
     flexDirection: "row",
     gap: 8,
@@ -454,10 +490,8 @@ const styles = StyleSheet.create({
     height: 60,
     borderRadius: 12,
     overflow: "hidden",
-    opacity: 0.5,
   },
   thumbnailActive: {
-    opacity: 1,
     borderWidth: 3,
     borderColor: "#ff6600",
   },
@@ -467,11 +501,17 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
+  thumbnailContentInactive: {
+    backgroundColor: "#ff660040",
+  },
   thumbnailNumber: {
     color: "#fff",
     fontSize: 10,
     fontWeight: "bold",
     marginTop: 4,
+  },
+  thumbnailNumberInactive: {
+    color: "#ffffff60",
   },
   thumbnailBadge: {
     position: "absolute",
@@ -484,8 +524,8 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-  thumbnailBadgeText: {
-    fontSize: 8,
+  thumbnailBadgeInactive: {
+    backgroundColor: "#EF444460",
   },
   thumbnailScore: {
     position: "absolute",
@@ -495,17 +535,23 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(0,0,0,0.7)",
     paddingVertical: 2,
   },
+  thumbnailScoreInactive: {
+    backgroundColor: "rgba(0,0,0,0.3)",
+  },
   thumbnailScoreText: {
     color: "#fff",
     fontSize: 9,
     textAlign: "center",
   },
+  thumbnailScoreTextInactive: {
+    color: "#ffffff60",
+  },
   footer: {
     position: "absolute",
-    bottom: 0,
+    bottom: 25,
     left: 0,
     right: 0,
-    backgroundColor: "#000000ff",
+    backgroundColor: "#232222ff",
     paddingHorizontal: 16,
     paddingTop: 12,
     paddingBottom: 30,
