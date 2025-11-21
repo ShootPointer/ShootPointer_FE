@@ -3,21 +3,20 @@ import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Video } from "expo-av";
 import { useRouter } from "expo-router";
-import React, { useEffect, useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
-  ActivityIndicator,
+  ImageBackground,
   Dimensions,
   FlatList,
   Image,
-  ImageBackground,
   Text,
   TouchableOpacity,
   View,
+  ActivityIndicator,
 } from "react-native";
 import api from "../api/api";
-import { EventSourcePolyfill } from 'react-native-sse';
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
-global.EventSource = EventSourcePolyfill;
 export default function HomeScreen() {
   const [highlights, setHighlights] = useState([]);
   const [userInfo, setUserInfo] = useState(null);
@@ -25,46 +24,48 @@ export default function HomeScreen() {
   const router = useRouter();
 
   useEffect(() => {
-    const fetchUserInfo = async () => {
+    const fetchData = async () => {
       try {
         const token = await AsyncStorage.getItem("accessToken");
-        if (!token) return; // 토큰 없으면 API 요청하지 않음
 
-        const response = await api.get("/member/me", {
+        if (!token) return;
+
+        // 1️⃣ 사용자 정보 가져오기
+        const userRes = await api.get("/member/me", {
           headers: { Authorization: `Bearer ${token}` },
         });
-        const data = response.data.data;
 
+        const u = userRes.data.data;
         setUserInfo({
-          username: data.username,
-          backNumber: data.backNumber,
-          highlightCount: data.highlightCount,
-          totalThreePoint: data.totalThreePoint,
-          totalTwoPoint: data.totalTwoPoint,
+          username: u.username,
+          backNumber: u.backNumber,
+          highlightCount: u.highlightCount,
+          totalThreePoint: u.totalThreePoint,
+          totalTwoPoint: u.totalTwoPoint,
         });
 
-        const dummyHighlights = [
-          {
-            id: "1",
-            title: "경기 하이라이트 1",
-            type: "video",
-            media:
-              "https://highlight.shootpointer-highlight-tunnel.store/highlight//17f4dba618a04e83/17f4dba618a04e83_segment_02.mp4",
-          },
-          {
-            id: "2",
-            title: "경기 하이라이트 2",
-            type: "video",
-            media: "https://www.w3schools.com/html/mov_bbb.mp4",
-          },
-          {
-            id: "3",
-            title: "경기 하이라이트 3",
-            type: "video",
-            media: "https://www.w3schools.com/html/mov_bbb.mp4",
-          },
-        ];
-        setHighlights(dummyHighlights);
+        // 2️⃣ WEEKLY 하이라이트 가져오기
+        const highlightRes = await api.get("/api/highlight", {
+          params: { period: "WEEKLY" },
+        });
+
+        console.log("🔥 WEEKLY highlight response:", highlightRes.data);
+
+        const result = highlightRes.data?.data;
+
+        if (!result || !Array.isArray(result)) {
+          console.log("⚠ 서버에서 하이라이트 데이터 없음:", highlightRes.data);
+          setHighlights([]);
+        } else {
+          const converted = result.map((item) => ({
+            id: item.highlightId,
+            title: item.title,
+            type: "image", // 서버에 mediaType이 없으므로 이미지로 처리
+            media: item.highlightUrl,
+          }));
+
+          setHighlights(converted);
+        }
       } catch (err) {
         console.error("데이터 로드 실패:", err);
       } finally {
@@ -72,12 +73,12 @@ export default function HomeScreen() {
       }
     };
 
-    fetchUserInfo();
+    fetchData();
   }, []);
 
   const renderHighlight = ({ item }) => (
     <View style={styles.highlightCard}>
-      {item.type === "image" ? (
+      {item.type === "IMAGE" ? (
         <Image source={{ uri: item.media }} style={styles.highlightImage} />
       ) : (
         <Video
@@ -116,42 +117,55 @@ export default function HomeScreen() {
           style={styles.logo}
         />
         <TouchableOpacity onPress={() => router.push("/RankingScreen")}>
-          <Ionicons name="flame-outline" size={26} color="#ff6a33" />
+          <Ionicons name="flame-outline" size={26} color="#ff6a33" marginLeft="70%" />
         </TouchableOpacity>
       </View>
 
+      {/* 사용자 카드 */}
       {userInfo && (
-        <ImageBackground
-          source={require("../../assets/images/Profile.png")}
-          style={styles.userCard}
-          imageStyle={{ borderRadius: 20 }} // userCard랑 같은 둥근 모서리 적용
-          resizeMode="contain"
-        >
-          <View style={styles.userTopRow}>
-            <View>
-              <Text style={styles.userName}>{userInfo.username} 님</Text>
-              <Text style={styles.userMatchInfo}>
-                {" "}
-                하이라이트 {userInfo.highlightCount}
-              </Text>
+        <View style={styles.cardContainer}>
+          {/* 하단 그림자 */}
+          <View style={styles.bottomShadow} />
+          <ImageBackground
+            source={require("../../assets/images/Profile.png")}
+            style={styles.userCard}
+            imageStyle={{
+              width: '80%',
+              height: '80%',
+              position:"absolute",
+              marginTop: 50,
+              marginLeft:50,
+            }}
+            resizeMode="contain"
+          >
+            <View style={styles.userTopRow}>
+              <View>
+                <Text style={styles.userName}>{userInfo.username}</Text>
+                <Text style={styles.userMatchInfo}>
+                  하이라이트 {userInfo.highlightCount}
+                </Text>
+              </View>
+              <View style={styles.userBackNumberWrap}>
+                <Text style={styles.backNumberLabel}>No.</Text>
+                <Text style={styles.backNumberValue}>{userInfo.backNumber}</Text>
+              </View>
             </View>
-            <Text style={styles.userBackNumber}>No.{userInfo.backNumber}</Text>
-          </View>
 
-          <View style={styles.statsRow}>
-            <View style={styles.statBox}>
-              <Text style={styles.statValue}>{userInfo.totalThreePoint}</Text>
-              <Text style={styles.statLabel}>3점슛</Text>
+            <View style={styles.statsRow}>
+              <View style={styles.statBox}>
+                <Text style={styles.statLabel}>3점슛</Text>
+                <Text style={styles.statValue}>{userInfo.totalThreePoint}회</Text>
+              </View>
+              <View style={styles.statBox}>
+                <Text style={styles.statLabel}>2점슛</Text>
+                <Text style={styles.statValue}>{userInfo.totalTwoPoint}회</Text>
+              </View>
             </View>
-            <View style={styles.statBox}>
-              <Text style={styles.statValue}>{userInfo.totalTwoPoint}</Text>
-              <Text style={styles.statLabel}>2점슛</Text>
-            </View>
-          </View>
-        </ImageBackground>
+          </ImageBackground>
+        </View>
       )}
 
-      {/* 주간 하이라이트 리스트 */}
+      {/* 주간 하이라이트 */}
       <View style={styles.highlightList}>
         <Text style={styles.sectionTitle}> 이 주의 하이라이트</Text>
         <FlatList
@@ -169,27 +183,41 @@ export default function HomeScreen() {
 const { width } = Dimensions.get("window");
 
 const styles = {
-  container: { flex: 1, backgroundColor: "#111111", paddingTop: 40 },
+  container: { flex: 1, backgroundColor: "#111111", paddingTop: 40, paddingLeft: 10 },
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
     paddingHorizontal: 15,
+    marginTop: 10
   },
   logo: { width: 120, height: 40 },
+
+  cardContainer: {
+    margin: 15,
+    marginTop: 50,
+  },
+
+  bottomShadow: {
+    position: 'absolute',
+    bottom: -10,
+    left: -6,
+    right: 15,
+    height: 360,
+    backgroundColor: '#000',
+    opacity: 0.1,
+    borderRadius: 30,
+  },
+
   userCard: {
     backgroundColor: "#3b2219",
     borderRadius: 20,
     padding: 20,
-    margin: 15,
-    shadowColor: "#000",
-    shadowOpacity: 0.5,
-    shadowOffset: { width: 0, height: 3 },
-    shadowRadius: 6,
-    elevation: 5,
     height: 350,
-    justifyContent: "space-between", // 상단과 하단 분리
+    width: 350,
+    justifyContent: "space-between",
   },
+
   userTopRow: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -198,29 +226,68 @@ const styles = {
   },
   userName: { fontSize: 20, fontWeight: "bold", color: "#fff" },
   userMatchInfo: { fontSize: 14, color: "#aaa", marginTop: 2 },
-  userBackNumber: { fontSize: 18, fontWeight: "bold", color: "#fff" },
+  userBackNumberWrap: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+
+  backNumberLabel: {
+    fontSize: 16,
+    color: "#ffffffaa",
+    fontWeight: "300",
+    marginRight: 3,
+  },
+
+  backNumberValue: {
+    fontSize: 28,
+    color: "#fff",
+    fontWeight: "bold",
+    marginBottom: 10
+  },
+
   statsRow: {
     flexDirection: "row",
     justifyContent: "space-around",
     backgroundColor: "#ff6a33",
     borderRadius: 12,
-    paddingVertical: 15,
+    paddingVertical: 20,
+    alignItems: "center",
   },
-  statBox: { alignItems: "center" },
-  statValue: { color: "#fff", fontSize: 18, fontWeight: "bold" },
-  statLabel: { color: "#aaa", fontSize: 14, marginTop: 2 },
+
+  statBox: { 
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 5,
+  },
+  statValue: { 
+    color: "#fff", 
+    fontSize: 23, 
+    fontWeight: "bold",
+  },
+  statLabel: { 
+    fontWeight: "300",
+    color: "#fff", 
+    fontSize: 12,
+    marginRight: 8
+  },
+
+  highlightList: { paddingLeft: 10, marginTop: 10 },
+
   highlightCard: {
-    marginRight: 10,
     width: 200,
     borderRadius: 12,
-    overflow: "hidden",
   },
-  highlightImage: { width: 180, height: 270, borderRadius: 12, margin: 10 },
+  highlightImage: {
+    width: 180,
+    height: 200,
+    borderRadius: 12,
+    margin: 5,
+  },
   highlightTitle: {
     color: "#fff",
-    fontSize: 14,
+    fontSize: 12,
     marginTop: 5,
     textAlign: "center",
   },
-  sectionTitle: { color: "#fff", fontSize: 18, marginTop: 5 },
+  sectionTitle: { color: "#fff", fontSize: 18, marginTop: 5, marginLeft: 10, marginBottom: 10 },
 };

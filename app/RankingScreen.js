@@ -11,18 +11,18 @@ import {
   View,
 } from "react-native";
 import api from "./api/api";
+import { Stack, useRouter } from "expo-router";
 
 const RankingScreen = () => {
+  const router = useRouter();
   const [rankData, setRankData] = useState([]);
   const [loading, setLoading] = useState(false);
   const [selectedTab, setSelectedTab] = useState("weekly"); // weekly / monthly
-  const router = useRouter();
 
   useEffect(() => {
     fetchRanking(selectedTab);
   }, [selectedTab]);
 
-  // ✅ 랭킹 데이터 가져오기 (공통 api 훅 사용)
   const fetchRanking = async (type) => {
     setLoading(true);
     try {
@@ -50,37 +50,55 @@ const RankingScreen = () => {
     }
   };
 
-  // ✅ 각 항목 렌더링
-  const renderItem = ({ item, index }) => (
-    <View
-      style={[
-        styles.rankItem,
-        index === 0
-          ? styles.gold
-          : index === 1
-          ? styles.silver
-          : index === 2
-          ? styles.bronze
-          : null,
-      ]}
-    >
-      <Text style={styles.rank}>{item.rank || index + 1}</Text>
-      <Image
-        source={{
-          uri: item.profileImg || "https://via.placeholder.com/40",
-        }}
-        style={styles.profile}
+  const renderItem = ({ item, index }) => {
+    const bgStyle =
+      index === 0
+        ? styles.gold
+        : index === 1
+        ? styles.silver
+        : index === 2
+        ? styles.bronze
+        : styles.normal;
+
+    return (
+      <View style={[styles.rankItem, bgStyle]}>
+        <Text style={styles.rankNumber}>{index + 1}</Text>
+
+<Image
+        source={require("../assets/images/profileimage.png")}
+        style={{ width: 50, height: 50, opacity: 1 }}
       />
-      <Text style={styles.name}>{item.memberName || "익명"}</Text>
-      <Text style={styles.score}>{item.totalScore ?? 0}</Text>
-      <Text style={styles.detail}>{item.twoScore ?? 0}</Text>
-      <Text style={styles.detail}>{item.threeScore ?? 0}</Text>
+        <Text style={styles.name}>{item.memberName || "익명"}</Text>
+
+        <Text style={styles.score}>{item.totalScore ?? 0}</Text>
+        <Text style={styles.detail}>{item.twoScore ?? 0}</Text>
+        <Text style={styles.detail}>{item.threeScore ?? 0}</Text>
+      </View>
+    );
+  };
+
+  // --- 여기부터 추가된 부분: 컬럼 타이틀(헤더) ---
+  const ListHeader = () => (
+    <View style={styles.listHeaderContainer}>
+      <Text style={[styles.headerCell, styles.headerRank]}>순위</Text>
+
+      {/* 이름(아바타 + 이름) 자리와 정렬을 위해 빈 공간 대신 '이름' 텍스트 넣음 */}
+      <View style={[styles.headerCell, styles.headerNameWrap]}>
+        <Text style={styles.headerNameText}>                이름</Text>
+      </View>
+
+      <Text style={[styles.headerCell, styles.headerScore]}>총득점</Text>
+      <Text style={[styles.headerCell, styles.headerDetail]}>2점슛</Text>
+      <Text style={[styles.headerCell, styles.headerDetail]}>3점슛</Text>
     </View>
   );
+  // --- 추가 끝 ---
 
   return (
     <View style={styles.container}>
       <Stack.Screen options={{ headerShown: false }} />
+
+      {/* 상단 헤더 */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()}>
           <Image
@@ -88,19 +106,28 @@ const RankingScreen = () => {
             style={styles.backIcon}
           />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>설정</Text>
-        <View style={{ width: 28 }} />
+
+        <Text style={styles.headerTitle}>득점 랭킹</Text>
+
+        <View style={{ width: 30 }} />
       </View>
 
-      <Text style={styles.title}>득점 랭킹</Text>
-      <Text style={styles.subtitle}>주간 / 월간 슈터들을 확인해 보세요!</Text>
+      {/* 인트로 박스 */}
+      <View style={styles.infoBox}>
+        {/* 필요하면 icons 준비 */}
+        <Image
+          source={require("../assets/images/Ballpointer.png")}
+          style={styles.infoIcon}
+        />
+        <Text style={styles.infoText}>주간 / 월간 슈터들을 확인해 보세요!</Text>
+      </View>
 
-      {/* ✅ 탭 버튼 */}
+      {/* 탭 버튼 */}
       <View style={styles.tabContainer}>
         <TouchableOpacity
           style={[
             styles.tabButton,
-            selectedTab === "weekly" && styles.tabButtonActive,
+            selectedTab === "weekly" && styles.tabActive,
           ]}
           onPress={() => setSelectedTab("weekly")}
         >
@@ -117,7 +144,7 @@ const RankingScreen = () => {
         <TouchableOpacity
           style={[
             styles.tabButton,
-            selectedTab === "monthly" && styles.tabButtonActive,
+            selectedTab === "monthly" && styles.tabActive,
           ]}
           onPress={() => setSelectedTab("monthly")}
         >
@@ -132,7 +159,7 @@ const RankingScreen = () => {
         </TouchableOpacity>
       </View>
 
-      {/* ✅ 로딩 / 리스트 / 데이터 없음 처리 */}
+      {/* 리스트 영역 + 헤더 표시 */}
       {loading ? (
         <ActivityIndicator
           size="large"
@@ -140,17 +167,18 @@ const RankingScreen = () => {
           style={{ marginTop: 40 }}
         />
       ) : rankData.length === 0 ? (
-        <Text style={{ color: "#aaa", textAlign: "center", marginTop: 40 }}>
-          랭킹 데이터가 없습니다 😥
-        </Text>
+        <Text style={styles.noData}>랭킹 데이터가 없습니다 😥</Text>
       ) : (
-        <FlatList
-          data={rankData}
-          renderItem={renderItem}
-          keyExtractor={(item, index) => index.toString()}
-          contentContainerStyle={styles.listContainer}
-          showsVerticalScrollIndicator={false}
-        />
+        <>
+          <ListHeader />
+          <FlatList
+            data={rankData}
+            renderItem={renderItem}
+            keyExtractor={(item, index) => index.toString()}
+            contentContainerStyle={{ paddingBottom: 30 }}
+            showsVerticalScrollIndicator={false}
+          />
+        </>
       )}
     </View>
   );
@@ -158,41 +186,69 @@ const RankingScreen = () => {
 
 export default RankingScreen;
 
-// ⚙ 스타일 생략 (기존 코드 유지)
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#0E0E0E",
-    paddingTop: 60,
+    backgroundColor: "#0D0D0D",
     paddingHorizontal: 20,
+    paddingTop: 20,
   },
-  title: {
+
+  /* 헤더 */
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 20,
+    marginBottom: 10,
+  },
+  backIcon: {
+    width: 24,
+    height: 24,
+  },
+  headerTitle: {
     color: "#fff",
-    fontSize: 22,
+    fontSize: 18,
     fontWeight: "bold",
-    marginBottom: 5,
+    flex: 1,
+    textAlign: "center",
+    marginRight: 24,
   },
-  subtitle: {
-    color: "#aaa",
-    fontSize: 14,
+
+  /* 인트로 박스 */
+  infoBox: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#1A1A1A",
+    padding: 15,
+    borderRadius: 12,
+    marginTop: 10,
     marginBottom: 20,
   },
+  infoIcon: {
+    width: 26,
+    height: 26,
+    marginRight: 10,
+  },
+  infoText: {
+    color: "#fff",
+    fontSize: 15,
+  },
+
+  /* 탭 */
   tabContainer: {
     flexDirection: "row",
-    justifyContent: "space-around",
-    marginBottom: 20,
     backgroundColor: "#1F1F1F",
     borderRadius: 10,
     padding: 5,
+    marginBottom: 12,
   },
   tabButton: {
     flex: 1,
-    alignItems: "center",
     paddingVertical: 10,
     borderRadius: 8,
+    alignItems: "center",
   },
-  tabButtonActive: {
+  tabActive: {
     backgroundColor: "#FF6600",
   },
   tabText: {
@@ -203,46 +259,88 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontWeight: "bold",
   },
-  listContainer: {
-    paddingBottom: 30,
+
+  /* --- 리스트 헤더(열 제목) --- */
+  listHeaderContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 8,
+    paddingHorizontal: 6,
+    marginBottom: 6,
   },
+  headerCell: {
+    color: "#999",
+    fontSize: 13,
+    fontWeight: "600",
+  },
+  headerRank: {
+    width: 30,
+    textAlign: "center",
+  },
+  headerNameWrap: {
+    flex: 1,
+    paddingLeft: 8,
+  },
+  headerNameText: {
+    color: "#999",
+    fontSize: 13,
+    fontWeight: "600",
+  },
+  headerScore: {
+    width: 60,
+    textAlign: "center",
+  },
+  headerDetail: {
+    width: 45,
+    textAlign: "center",
+  },
+
+  /* 리스트 아이템 */
   rankItem: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#1A1A1A",
     padding: 12,
     borderRadius: 10,
     marginBottom: 10,
   },
-  rank: {
-    color: "#fff",
+  gold: { backgroundColor: "#EBB13C" },
+  silver: { backgroundColor: "#A19E9B" },
+  bronze: { backgroundColor: "#A65934" },
+  normal: { backgroundColor: "#1A1A1A" },
+
+  rankNumber: {
     width: 30,
-    textAlign: "center",
+    color: "#fff",
+    fontSize: 16,
     fontWeight: "bold",
+    textAlign: "center",
   },
   profile: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    marginHorizontal: 10,
   },
   name: {
-    color: "#fff",
     flex: 1,
+    color: "#fff",
     fontSize: 16,
   },
   score: {
-    color: "#FFD700",
-    width: 50,
+    width: 60,
     textAlign: "center",
+    color: "#FFD700",
     fontWeight: "bold",
+    fontSize: 15,
   },
   detail: {
-    color: "#ccc",
-    width: 40,
+    width: 45,
     textAlign: "center",
+    color: "#ccc",
   },
-  gold: { backgroundColor: "#3B2F00" },
-  silver: { backgroundColor: "#2F2F2F" },
-  bronze: { backgroundColor: "#3A1E00" },
+
+  noData: {
+    color: "#999",
+    textAlign: "center",
+    marginTop: 30,
+  },
 });
